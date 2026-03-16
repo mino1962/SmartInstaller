@@ -1,0 +1,2075 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<HTA:APPLICATION
+  ID="SmartInstaller"
+  APPLICATIONNAME="SmartInstaller"
+  SCROLL="yes"
+  SINGLEINSTANCE="yes"
+  WINDOWSTATE="maximize"
+  BORDER="thin"
+  CAPTION="yes"
+  MAXIMIZEBUTTON="yes"
+  MINIMIZEBUTTON="yes"
+/>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>SmartInstaller - Gestore Installazioni Massive</title>
+<style>
+* { box-sizing: border-box; }
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #eef2ff;
+  color: #1e293b;
+  margin: 0;
+  padding: 0;
+  padding-top: 110px; /* Spazio per hdr e nav fissi */
+  overflow-y: scroll; /* Forza barra verticale di sistema */
+}
+.hdr {
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+  color: white;
+  padding: 10px 18px;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-align: center;
+  align-items: center;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 1000;
+  overflow: hidden;
+}
+.hdr-logo { font-size: 21px; font-weight: 800; letter-spacing: 0.5px; }
+.hdr-sub { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+.hdr-path { font-size: 11px; opacity: 0.65; font-family: Consolas, monospace; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav {
+  background: #1e3a8a;
+  display: -ms-flexbox;
+  display: flex;
+  border-bottom: 3px solid #1d4ed8;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  height: 42px;
+  z-index: 1000;
+  overflow: hidden;
+}
+.nav-btn {
+  color: rgba(255,255,255,0.65);
+  border: none;
+  background: none;
+  padding: 9px 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+}
+.nav-btn:hover { color: white; background: rgba(255,255,255,0.08); }
+.nav-btn.active { color: white; border-bottom-color: #60a5fa; background: rgba(255,255,255,0.12); }
+.main { display: block; }
+.content { padding: 18px; padding-bottom: 60px; overflow: visible; }
+.view { display: none; }
+.view.active { display: block; }
+.card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.09);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+}
+.pcard-grid {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+}
+.pcard {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+  padding: 20px;
+  width: 260px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  -webkit-transition: all 0.18s;
+  transition: all 0.18s;
+}
+.pcard:hover { border-color: #3b82f6; box-shadow: 0 4px 14px rgba(59,130,246,0.18); }
+.pcard.sel { border-color: #1d4ed8; box-shadow: 0 4px 18px rgba(29,78,216,0.25); background: #eff6ff; }
+.pcard-icon { font-size: 32px; margin-bottom: 10px; }
+.pcard-name { font-size: 16px; font-weight: 700; color: #1e3a8a; margin-bottom: 5px; }
+.pcard-desc { font-size: 12px; color: #64748b; margin-bottom: 10px; }
+.pcard-count { font-size: 12px; color: #2563eb; font-weight: 600; }
+.btn {
+  padding: 7px 15px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-weight: 600;
+  -webkit-transition: all 0.15s;
+  transition: all 0.15s;
+  display: inline-block;
+}
+.btn-primary { background: #1d4ed8; color: white; }
+.btn-primary:hover { background: #1e40af; }
+.btn-success { background: #16a34a; color: white; }
+.btn-success:hover { background: #15803d; }
+.btn-danger { background: #dc2626; color: white; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-sec { background: #e2e8f0; color: #475569; }
+.btn-sec:hover { background: #cbd5e1; }
+.btn-lg { padding: 11px 28px; font-size: 14px; }
+.tbl { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.tbl th { text-align: left; padding: 9px 11px; background: #f8fafc; color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+.tbl td { padding: 9px 11px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; vertical-align: middle; }
+.tbl tr:hover td { background: #f8fafc; }
+.fg { margin-bottom: 12px; }
+.fg label { display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 3px; text-transform: uppercase; }
+.fi {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #334155;
+}
+.fi:focus { outline: none; border-color: #3b82f6; }
+.sw-list { max-height: 160px; overflow-y: auto; border: 1.5px solid #e2e8f0; border-radius: 6px; }
+.sw-item { padding: 7px 10px; display: -ms-flexbox; display: flex; -ms-flex-align: center; align-items: center; gap: 8px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+.sw-item:last-child { border-bottom: none; }
+.sw-item:hover { background: #f8fafc; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+.b-blue { background: #dbeafe; color: #1d4ed8; }
+.b-green { background: #dcfce7; color: #16a34a; }
+.b-gray { background: #f1f5f9; color: #64748b; }
+.b-purple { background: #ede9fe; color: #7c3aed; }
+.b-orange { background: #fff7ed; color: #c2410c; }
+.sw-src { font-size: 10px; color: #7c3aed; background: #ede9fe; border-radius: 8px; padding: 1px 6px; margin-left: 4px; }
+.log-area {
+  background: #0f172a;
+  color: #94a3b8;
+  padding: 14px;
+  border-radius: 8px;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  height: 290px;
+  overflow-y: auto;
+  line-height: 1.65;
+}
+.ll { padding: 1px 0; }
+.ls { color: #4ade80; }
+.le { color: #f87171; }
+.li { color: #60a5fa; }
+.lw { color: #fbbf24; }
+.prog { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+.prog-fill { height: 100%; background: linear-gradient(90deg,#1d4ed8,#3b82f6); border-radius: 4px; -webkit-transition: width 0.3s; transition: width 0.3s; }
+.overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.55); display: -ms-flexbox; display: flex; -ms-flex-align: center; align-items: center; -ms-flex-pack: center; justify-content: center; z-index: 1000; }
+.overlay.hidden { display: none; }
+.ov-box { background: white; border-radius: 12px; padding: 28px; width: 520px; max-width: 94%; }
+.ov-title { font-size: 18px; font-weight: 800; color: #1e3a8a; margin-bottom: 6px; }
+.split { display: -ms-flexbox; display: flex; gap: 14px; }
+.split-sm { width: 320px; -ms-flex-shrink: 0; flex-shrink: 0; }
+.split-main { -ms-flex: 1; flex: 1; }
+.flex { display: -ms-flexbox; display: flex; }
+.flex-btw { -ms-flex-pack: justify; justify-content: space-between; }
+.flex-c { -ms-flex-align: center; align-items: center; }
+.flex-wrap { -ms-flex-wrap: wrap; flex-wrap: wrap; }
+.flex-grow { -ms-flex-positive: 1; flex-grow: 1; }
+.gap8 { gap: 8px; }
+.gap16 { gap: 16px; }
+.mt8 { margin-top: 8px; }
+.mb8 { margin-bottom: 8px; }
+.muted { color: #94a3b8; font-size: 12px; }
+.empty { text-align: center; padding: 36px; color: #94a3b8; font-size: 14px; }
+.mono { font-family: Consolas, monospace; font-size: 11px; }
+.mono.link { color: #2563eb; cursor: pointer; text-decoration: underline; }
+.mono.link:hover { color: #1d4ed8; background: rgba(37,99,235,0.05); }
+.name-link { cursor: pointer; color: #1e3a8a; }
+.name-link:hover { color: #2563eb; text-decoration: underline; }
+.info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 12px; color: #1e40af; margin-bottom: 12px; }
+.tbl-container { border: 1px solid #e2e8f0; border-radius: 6px; position: relative; }
+.tbl-scroll { max-height: 520px; overflow-y: auto; }
+.tbl-container table { margin-top: 0; width: 100%; border-collapse: collapse; }
+.tbl-container thead th { position: -webkit-sticky; position: sticky; top: 0; z-index: 10; border-top: none; }
+/* STILI GUIDA */
+.guide-card { padding: 30px; line-height: 1.6; color: #334155; }
+.guide-h1 { font-size: 24px; color: #1e3a8a; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+.guide-h2 { font-size: 18px; color: #2563eb; margin-top: 25px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.guide-p { margin-bottom: 15px; font-size: 14px; }
+.guide-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+.guide-item b { color: #1e3a8a; }
+.guide-tip { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px; border-radius: 4px; font-size: 13px; margin: 15px 0; }
+.guide-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 5px; }
+.btn-wizard { background: #fdf2f8; color: #db2777; border: 1.5px solid #f9a8d4; }
+.btn-wizard:hover { background: #fbcfe8; }
+.helper-box { background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 12px; margin-top: 8px; display: none; }
+.helper-title { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: block; }
+.preset-grid { display: -ms-flexbox; display: flex; -ms-flex-wrap: wrap; flex-wrap: wrap; gap: 6px; }
+.btn-tiny { padding: 3px 8px; font-size: 10px; border-radius: 4px; }
+.bulk-bar { background: #1e3a8a; color: white; padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; display: none; -ms-flex-align: center; align-items: center; -ms-flex-pack: justify; justify-content: space-between; box-shadow: 0 4px 12px rgba(30,58,138,0.2); }
+.bulk-count { font-size: 13px; font-weight: 700; color: #fff; }
+#splash { position: fixed; top:0; left:0; right:0; bottom:0; background: #1e3a8a; color: white; display: -ms-flexbox; display: flex; -ms-flex-direction: column; flex-direction: column; -ms-flex-align: center; align-items: center; -ms-flex-pack: center; justify-content: center; z-index: 99999; font-family: "Segoe UI", Arial, sans-serif; }
+.prof-editor-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: #f8fafc; z-index: 2000; overflow-y: auto; display: none; padding: 20px; }
+.prof-editor-card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 1000px; max-width: 98%; margin: 0 auto; min-height: 90vh; display: flex; flex-direction: column; border: 1px solid #e2e8f0; }
+.prof-editor-hdr { padding: 20px 24px; border-bottom: 2px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 12px 12px 0 0; }
+.prof-editor-body { padding: 24px; flex-grow: 1; overflow-y: auto; }
+.prof-editor-footer { padding: 18px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; border-radius: 0 0 12px 12px; }
+.list-search { margin-bottom: 10px; position: relative; }
+.list-search input { padding-left: 32px; font-size: 12px; }
+.list-search:before { content: "\1F50D"; position: absolute; left: 10px; top: 8px; font-size: 12px; opacity: 0.5; }
+.sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.sw-list-container { display: flex; flex-direction: column; height: 100%; }
+.sw-list-box { border: 1.5px solid #e2e8f0; border-radius: 8px; flex-grow: 1; max-height: 450px; overflow-y: auto; background: #fff; }
+.sw-item-large { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 10px; transition: background 0.1s; }
+.sw-item-large:hover { background: #f8fafc; }
+.sw-item-large input { cursor: pointer; width: 16px; height: 16px; }
+.sw-item-large label { cursor: pointer; flex-grow: 1; font-size: 13px; font-weight: 500; display: block; }
+.sw-item-large.selected { background: #eff6ff; border-left: 3px solid #3b82f6; }
+.prof-top-form { display: grid; grid-template-columns: 2fr 3fr 1fr; gap: 16px; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+<div id="splash">
+  <div style="font-size:38px; font-weight:800; margin-bottom:10px">&#9881; SmartInstaller</div>
+  <div style="font-size:16px; opacity:0.8">Inizializzazione in corso... attendere</div>
+</div>
+
+<div class="hdr">
+  <div>
+    <div class="hdr-logo">&#9881; SmartInstaller <span style="font-size:12px;opacity:0.8;font-weight:400;margin-left:8px">v1.34</span></div>
+    <div class="hdr-sub">IT Deployment Tool - di <b>Gelsomino Lullo</b> - <span style="color:#fbbf24">Licenza: Freeware per tutti</span></div>
+  </div>
+  <div style="display:-ms-flexbox;display:flex;-ms-flex-align:center;align-items:center;gap:16px">
+    <div class="hdr-path" id="hdrPath"></div>
+    <button onclick="reloadCfg()" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.35);border-radius:6px;padding:5px 14px;cursor:pointer;font-size:13px;font-family:Segoe UI,Arial,sans-serif;font-weight:600;" title="Ricarica configurazione">&#8635; Ricarica</button>
+    <button onclick="if(confirm('Chiudere SmartInstaller?')) window.close();" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.35);border-radius:6px;padding:5px 14px;cursor:pointer;font-size:13px;font-family:Segoe UI,Arial,sans-serif;font-weight:600;" title="Chiudi applicazione">&#10005; Chiudi</button>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" id="nb0" onclick="showView('install')">&#128640; Installazione</button>
+  <button class="nav-btn" id="nb1" onclick="showView('software')">&#128230; Libreria Software</button>
+  <button class="nav-btn" id="nb2" onclick="showView('profiles')">&#128193; Profili</button>
+  <button class="nav-btn" id="nb3" onclick="showView('config')">&#9881; Configurazione</button>
+  <button class="nav-btn" id="nb4" onclick="showView('log')">&#128147; Log</button>
+  <button class="nav-btn" id="nb5" onclick="showView('guide')">&#128214; Guida</button>
+</div>
+
+<div class="main">
+<div class="content">
+
+<!-- VIEW: INSTALL -->
+<div id="view-install" class="view active">
+  <div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Seleziona un profilo e avvia l'installazione</span>
+      <button class="nav-btn" style="color:#2563eb;padding:4px 8px;font-size:12px;margin:0;border:1px solid #bfdbfe;border-radius:4px" onclick="openGuide('g-install')">&#10068; Aiuto</button>
+    </div>
+    <div class="muted">Clicca su un profilo. I software dei <b>profili inclusi</b> vengono uniti automaticamente (senza duplicati).</div>
+    <div class="pcard-grid" id="pcardGrid">
+      <div class="empty">Nessun profilo. Vai su <b>Profili</b> per crearne uno.</div>
+    </div>
+  </div>
+  <div id="installPanel" style="display:none">
+    <div class="card">
+      <div class="card-title" id="ipTitle">Software da installare</div>
+      <div class="tbl-container">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>Nome</th><th>Percorso</th><th>Argomenti</th><th>Categoria</th><th>Azioni</th></tr></thead>
+          <tbody id="ipBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px;text-align:right">
+        <button class="btn btn-success btn-lg" onclick="startInstall()">&#9654; Avvia Installazione</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: SOFTWARE -->
+<div id="view-software" class="view">
+  <div class="card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span id="swFTitle">&#10133; Gestione Software</span>
+      <button class="nav-btn" style="color:#2563eb;padding:4px 8px;font-size:12px;margin:0;border:1px solid #bfdbfe;border-radius:4px" onclick="openGuide('g-library')">&#10068; Aiuto</button>
+    </div>
+    
+    <div class="flex flex-wrap gap16">
+      <div class="fg flex-grow" style="min-width:250px"><label>Nome *</label><input class="fi" id="swName" placeholder="es. Google Chrome"></div>
+      <div class="fg flex-grow" style="min-width:200px"><label>Categoria</label><input class="fi" id="swCat" placeholder="es. Browser, Office, Utility..."></div>
+    </div>
+
+    <div class="flex flex-wrap gap16">
+      <div class="fg flex-grow" style="min-width:400px">
+        <label>Percorso eseguibile o URL *</label>
+        <div class="flex gap8">
+          <input class="fi" id="swPath" placeholder="\\server\sw.exe, https://link.com/setup.exe oppure un comando PowerShell" style="-ms-flex:1;flex:1">
+          <button class="btn btn-sec" onclick="browsePath()" title="Sfoglia file locale/rete">&#128193;</button>
+        </div>
+      </div>
+      <div class="fg flex-grow" style="min-width:300px">
+        <label>Argomenti installazione silenziosa</label>
+        <div class="flex gap8">
+          <input class="fi" id="swArgs" placeholder="es. /S  /quiet  /silent" style="-ms-flex:1;flex:1">
+          <button class="btn btn-wizard" onclick="toggleSetupAssistant()" title="Assistente Smart Setup">&#129668;</button>
+        </div>
+        <div id="setupAssistant" class="helper-box">
+           <span class="helper-title">&#129668; Smart Setup Assistant</span>
+           <div id="detectMsg" style="font-size:12px;margin-bottom:8px;color:#475569">Seleziona un percorso per attivare l'analisi.</div>
+           <div class="preset-grid" id="presetButtons">
+              <button class="btn btn-sec btn-tiny" onclick="setArgs('/VERYSILENT /SUPPRESSMSGBOXES /NORESTART')">Inno Setup</button>
+              <button class="btn btn-sec btn-tiny" onclick="setArgs('/S')">NSIS</button>
+              <button class="btn btn-sec btn-tiny" onclick="setArgs('/quiet /norestart')">MSI Basic</button>
+              <button class="btn btn-sec btn-tiny" onclick="setArgs('/s /v\"/qn\"')">InstallShield</button>
+              <button class="btn btn-sec btn-tiny" onclick="setArgs('/silent /install')">Chrome/Edge</button>
+           </div>
+           <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;">
+              <button class="btn btn-primary btn-tiny" onclick="testHelp()" style="width:100%">Prova /? (Help Locale)</button>
+              <div style="font-size:10px;color:#94a3b8;margin-top:4px">⚠️ Attenzione: se il software non supporta il comando /?, potrebbe avviarsi l'installazione guidata.</div>
+           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap16 flex-c">
+      <div class="fg flex-grow" style="margin-bottom:0"><label>Note</label><input class="fi" id="swNotes" placeholder="Note opzionali..."></div>
+      <div class="flex flex-c" style="margin-top:16px;background:#f8fafc;padding:6px 14px;border-radius:8px">
+        <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-right:15px">Azioni permesse:</label>
+        <div class="flex flex-c" style="margin-right:25px">
+           <input type="checkbox" id="swAllowInstall" style="margin-right:8px;cursor:pointer" checked> 
+           <label for="swAllowInstall" style="font-size:12px;cursor:pointer">Installazione</label>
+        </div>
+        <div class="flex flex-c" style="margin-right:25px">
+           <input type="checkbox" id="swAllowCopy" style="margin-right:8px;cursor:pointer"> 
+           <label for="swAllowCopy" style="font-size:12px;cursor:pointer">Copia Locale</label>
+        </div>
+        <div class="flex flex-c">
+           <input type="checkbox" id="swPause" style="margin-right:8px;cursor:pointer" checked> 
+           <label for="swPause" style="font-size:12px;cursor:pointer" title="Se spuntato, il batch si fermerà alla fine chiedendo di premere un tasto">Pausa finale</label>
+        </div>
+      </div>
+      <div class="flex gap8" style="margin-top:16px">
+        <button class="btn btn-primary" onclick="saveSW()" id="swSaveBtn">Salva</button>
+        <button class="btn btn-sec" onclick="resetSWForm()">Annulla</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex flex-btw flex-c mb8" style="gap:16px">
+      <div class="card-title" style="margin-bottom:0;min-width:180px">&#128230; Software in libreria</div>
+      <div class="flex-grow flex gap8 flex-c">
+        <input type="text" class="fi" id="swSearchInput" onkeyup="onSWSearch()" placeholder="Cerca..." style="padding:5px 10px;font-size:13px;max-width:260px">
+        <div id="filterIndicator" style="display:none;white-space:nowrap;font-size:11px;background:#eff6ff;padding:4px 10px;border-radius:6px;border:1px solid #bfdbfe;color:#1e40af;font-weight:600;min-width:fit-content">
+          <span id="filterVal"></span> 
+          <button class="btn btn-tiny btn-danger" onclick="resetSWFilters()" style="padding:2px 8px;margin-left:8px;font-weight:800;white-space:nowrap" title="Rimuovi tutti i filtri">&#10005; Reset</button>
+        </div>
+      </div>
+      <span class="badge b-blue" id="swCount">0 software</span>
+    </div>
+    
+    <div id="bulkBar" class="bulk-bar">
+      <div class="flex flex-c gap16">
+        <span class="bulk-count" id="bulkCountTxt">0 software selezionati</span>
+        <div class="flex flex-c gap8" style="margin-left:8px;border-left:1px solid rgba(255,255,255,0.2);padding-left:16px">
+          <label style="font-size:11px;color:rgba(255,255,255,0.8);text-transform:uppercase;font-weight:700">Aggiungi a:</label>
+          <select class="fi" id="bulkDestProf" style="width:180px;padding:3px 6px;font-size:12px;color:#000"></select>
+          <button class="btn btn-success btn-tiny" onclick="bulkAddToProfile()">Esegui</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-tiny" style="background:#3b82f6" onclick="bulkCreateProfile()">&#128194; Crea Nuovo Profilo</button>
+    </div>
+
+    <div class="tbl-container tbl-scroll">
+      <table class="tbl">
+        <thead><tr><th style="width:30px"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th><th>Nome</th><th>Categoria</th><th>Percorso</th><th>Args</th><th>Azioni</th></tr></thead>
+        <tbody id="swBody"><tr><td colspan="6" class="empty">Nessun software. Aggiungine uno.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: PROFILES -->
+<div id="view-profiles" class="view">
+  <div class="card">
+    <div class="flex flex-btw flex-c mb8" style="align-items:center;">
+      <div class="card-title" style="margin-bottom:0">
+        &#128193; Profili di Installazione
+        <button class="btn btn-primary" onclick="openProfileEditor(null)" style="margin-left:16px">+ Crea Nuovo Profilo</button>
+      </div>
+      <span class="badge b-blue" id="profCount">0 profili</span>
+    </div>
+    <div class="info-box">
+      &#128161; <b>Gestione Profili:</b> Clicca su <b>Crea Nuovo Profilo</b> o usa l'icona della matita &#9998; per modificare. I profili permettono di raggruppare software e includere altri profili base (es: "Utility Comune").
+    </div>
+    <div class="tbl-container tbl-scroll">
+      <table class="tbl">
+        <thead><tr><th>Profilo</th><th>Descrizione</th><th>Propri</th><th>Include</th><th>Totale</th><th>Azioni</th></tr></thead>
+        <tbody id="profBody"><tr><td colspan="6" class="empty">Nessun profilo. Creane uno.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE EDITOR MODAL -->
+<div id="profEditorOverlay" class="prof-editor-overlay">
+  <div class="prof-editor-card">
+    <div class="prof-editor-hdr">
+      <div>
+        <div class="ov-title" id="profFTitle">&#10133; Editor Profilo</div>
+        <div class="muted">Configura nome, inclusioni e software specifici</div>
+      </div>
+      <button class="btn btn-sec" onclick="closeProfileEditor()">&#10005; Chiudi</button>
+    </div>
+    
+    <div class="prof-editor-body">
+      <div class="prof-top-form">
+        <div class="fg"><label>Nome profilo *</label><input class="fi" id="profName" placeholder="es. Aule Didattiche"></div>
+        <div class="fg"><label>Descrizione</label><input class="fi" id="profDesc" placeholder="es. Configurazione standard per laboratori"></div>
+        <div class="fg"><label>Icona</label><input class="fi" id="profIcon" placeholder="&#128187;" maxlength="4"></div>
+      </div>
+
+      <div class="sw-grid">
+        <!-- COLONNA SINISTRA: INCLUSIONI -->
+        <div class="sw-list-container">
+          <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>&#128279; Includi Profili Base</span>
+            <span id="cntIncl" class="badge b-purple">0 selezionati</span>
+          </label>
+          <div class="list-search">
+            <input type="text" class="fi" id="searchIncl" placeholder="Cerca profilo base..." onkeyup="filterInclList()">
+          </div>
+          <div class="sw-list-box" id="profIncludesList"></div>
+          <div class="muted mt8">Eredita automaticamente tutti i software dai profili selezionati.</div>
+        </div>
+
+        <!-- COLONNA DESTRA: SOFTWARE SPECIFICI -->
+        <div class="sw-list-container">
+          <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>&#128230; Software Specifici</span>
+            <span id="cntPropri" class="badge b-blue">0 selezionati</span>
+          </label>
+          <div class="list-search">
+            <input type="text" class="fi" id="searchPropri" placeholder="Cerca software in libreria..." onkeyup="filterPropriList()">
+          </div>
+          <div class="sw-list-box" id="profSWList"></div>
+          <div class="muted mt8">Software esclusivi di questo profilo (oltre a quelli ereditati).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prof-editor-footer">
+      <div class="flex-grow flex flex-c" style="color:#64748b; font-size:13px">
+        <span id="totalSWBadge" class="badge b-green" style="font-size:13px; padding:6px 12px">Totale: 0 software</span>
+      </div>
+      <button class="btn btn-sec btn-lg" onclick="closeProfileEditor()">Annulla</button>
+      <button class="btn btn-primary btn-lg" onclick="saveProfile()" id="profSaveBtn">Salva Profilo</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: CONFIGURAZIONE -->
+<div id="view-config" class="view">
+  <div class="card mb12">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>&#9881; Impostazioni Globali</span>
+      <button class="nav-btn" style="color:#2563eb;padding:4px 8px;font-size:12px;margin:0;border:1px solid #bfdbfe;border-radius:4px" onclick="openGuide('g-config')">&#10068; Aiuto</button>
+    </div>
+    
+    <div class="flex flex-wrap gap16" style="margin-bottom:16px;">
+      <div class="fg" style="flex: 1; min-width:300px;">
+        <label>Cartella salvataggio "Copia Locale" o Download *</label>
+        <div class="flex gap8">
+          <input class="fi" id="cfgLocalDir" style="-ms-flex:1;flex:1" placeholder="es. C:\SchoolDeploy_Local">
+          <button class="btn btn-primary" onclick="saveSettings()">&#128190; Salva</button>
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px;">
+          Percorso usato su ogni PC client durante l'esecuzione (Copia Locale).
+        </div>
+      </div>
+      <div class="fg" style="flex: 1.5; min-width:450px; border-left: 1px solid #e2e8f0; padding-left: 16px;">
+        <label>&#128640; Manutenzione Drive (Sostituzione Rapida)</label>
+        <div id="driveToolArea" style="background:#f1f5f9; padding:10px; border-radius:6px; border:1px dashed #cbd5e1;">
+          <!-- Caricato dinamicamente da renderDriveTool() -->
+          <div style="font-size:12px;color:#64748b">Scansione percorsi in corso...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">&#128194; Archivio Configurazioni (.json)</div>
+    <div class="info-box">
+      &#128161; Qui puoi gestire diversi file di configurazione. Per creare una nuova configurazione, scrivi il nome nel campo "Salva con nome" (senza .json) e clicca sul disco.
+    </div>
+    
+    <div class="flex gap16 mb8" style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+      <div class="fg flex-grow">
+        <label>Nome nuova configurazione (es. Laboratorio_Info)</label>
+        <div class="flex gap8">
+          <input class="fi" id="newCfgName" placeholder="Inserisci nome...">
+          <button class="btn btn-primary" onclick="saveAsConfig()">&#128190; Salva con nome</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tbl-container">
+      <table class="tbl">
+        <thead><tr><th>File</th><th>Ultima Modifica</th><th>Stato</th><th>Azioni</th></tr></thead>
+        <tbody id="cfgListBody">
+          <tr><td colspan="4" class="empty">Caricamento elenco...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: LOG -->
+
+<div id="view-log" class="view">
+  <div class="card">
+    <div class="flex flex-btw flex-c mb8" style="align-items:center;">
+      <div class="card-title" style="margin-bottom:0">
+        &#128203; Log di installazione
+        <button class="nav-btn" style="color:#2563eb;padding:4px 8px;font-size:12px;margin:0;margin-left:12px;border:1px solid #bfdbfe;border-radius:4px;display:inline-block" onclick="openGuide('g-log')">&#10068; Aiuto</button>
+      </div>
+      <div class="flex gap8">
+        <button class="btn btn-sec" onclick="exportLog()">&#128190; Esporta</button>
+        <button class="btn btn-sec" onclick="clearLog()">&#128465; Pulisci</button>
+      </div>
+    </div>
+    <div class="log-area" id="logArea">
+      <div class="ll li">SchoolDeploy v1.18 - Pronto.</div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: GUIDE -->
+<div id="view-guide" class="view">
+  <div class="card guide-card">
+    <h1 class="guide-h1">&#128214; Manuale Operativo SmartInstaller v1.34</h1>
+    <p class="guide-p">Benvenuto nel <b>Manuale Operativo</b> di SmartInstaller. Questa guida ti accompagnerà passo-passo nell'utilizzo di tutte le funzionalità del software per automatizzare le tue installazioni.</p>
+
+    <!-- SEZIONE 1: LIBRERIA -->
+    <div class="guide-h2" id="g-library">&#128230; 1. Libreria Software</div>
+    <div class="guide-p">La Libreria è il cuore di SmartInstaller: qui inserisci tutti i pacchetti che vuoi rendere disponibili per l'installazione.</div>
+    
+    <div class="guide-item">
+      <b>Come inserire un nuovo software:</b>
+      <ol style="margin-left:20px;margin-top:8px">
+        <li>Vai in <b>Libreria Software</b> (menu in alto).</li>
+        <li>Compila il <b>Percorso o URL</b>: puoi usare file in rete (<code class="badge">\\Server\share\file.exe</code>), file locali, o link diretti (<code class="badge">https://.../setup.exe</code>).</li>
+        <li>Usa lo <b>Smart Assistant</b>: Clicca su <b>🔍 Analisi Percorso</b>. Il programma leggerà il file e ti suggerirà i parametri silenziosi (es. <code class="badge">/quiet</code> per gli MSI o <code class="badge">/S</code> per altri).</li>
+        <li><b>Test Help Helper:</b> Se non conosci i parametri, clicca su <b>🔍 Test Help</b>: SmartInstaller proverà a lanciare il programma con <code class="badge">/?</code> per mostrarti le opzioni supportate.</li>
+        <li><b>Azioni Permesse:</b> Spunta "Installazione" se il software deve poter essere installato in automatico, o "Copia Locale" se vuoi solo che il file venga scaricato sul PC. <b>"Pausa finale"</b> decide se il terminale resta aperto dopo l'esecuzione (utile per verificare l'esito).</li>
+      </ol>
+    </div>
+
+    <div class="guide-item">
+      <b>Funzioni Rapide:</b>
+      <br>&#128101; <b>Duplica (📋):</b> Clicca sull'icona della clipboard per clonare un software esistente e modificarne solo una parte (ottimo per versioni diverse dello stesso programma).
+      <br>&#9998; <b>Modifica:</b> Clicca direttamente sul <b>Nome</b> del software nella tabella per aprirne la modifica.
+    </div>
+
+    <!-- SEZIONE 2: PROFILI -->
+    <div class="guide-h2" id="g-profiles">&#128193; 2. Organizzazione in Profili</div>
+    <div class="guide-p">I profili servono a raggruppare i software per laboratori o tipologie di utenza.</div>
+
+    <div class="guide-item">
+      <b>Gestione Intelligente dei Profili:</b>
+      <br><b>Software Propri:</b> Spunta i software che appartengono specificamente a questo profilo.
+      <br><b>&#128279; Includi Profili Base:</b> Questa è una funzione potente. Puoi creare un profilo chiamato "Base Comune" (con Browser e Utility) e poi <b>includerlo</b> in tutti gli altri profili. SmartInstaller unirà i software ed eliminerà automaticamente i doppioni.
+    </div>
+
+    <!-- SEZIONE 3: INSTALLAZIONE -->
+    <div class="guide-h2" id="g-install">&#128640; 3. Procedura d'Installazione</div>
+    <div class="guide-p">Questa è la fase operativa di caricamento sulle postazioni di lavoro.</div>
+
+    <div class="guide-item">
+      <b>Come avviare il deployment:</b>
+      <ol style="margin-left:20px;margin-top:8px">
+        <li>Nella scheda <b>Installazione</b>, seleziona il profilo cliccando sulla sua card.</li>
+        <li>Controlla la lista che compare sotto: vedrai l'icona <code class="badge b-green">▶</code> per i software che verranno installati e <code class="badge b-blue">💾</code> per quelli che verranno solo copiati.</li>
+        <li>Clicca sul pulsante <b>🚀 Avvia Installazione</b> in fondo alla pagina.</li>
+        <li><b>UAC Singola:</b> Si aprirà una finestra nera (CMD). Windows chiederà i permessi di Amministratore <b>una sola volta</b> per l'intera sequenza. Conferma e il PC farà tutto da solo!</li>
+      </ol>
+    </div>
+
+    <div class="guide-item">
+      <b>Test Veloce:</b>
+      <br>Se vuoi installare un solo software senza lanciare tutto il profilo, usa il tasto <code class="badge b-green">▶</code> direttamente nella riga del software desiderato.
+    </div>
+
+    <!-- SEZIONE 4: UTILITY -->
+    <div class="guide-h2">&#128190; 4. Copia Locale e Download URL</div>
+    <div class="guide-item">
+      <b>Copia Locale (💾):</b> Se clicchi il tasto del salvataggio, il software verrà scaricato (se URL) o copiato (se Rete) nella cartella predefinita (es. <code class="badge">C:\SmartInstaller_Local</code>). Al termine, SmartInstaller aprirà la cartella evidenziando il file pronto all'uso.
+      <br><b>PowerShell Diretta:</b> Se un'installazione richiede comandi complessi, puoi scrivere direttamente il codice PowerShell nel campo percorso (es. <code class="badge">Start-Process ...</code>). Il sistema lo gestirà automaticamente.
+    </div>
+
+    <!-- SEZIONE 5: LOG -->
+    <div class="guide-h2" id="g-log">&#128203; 5. Gestione Registri e Log</div>
+    <div class="guide-item">
+      <b>Monitoraggio e Debug:</b>
+      <ol style="margin-left:20px;margin-top:8px">
+        <li>La scheda <b>Log</b> tiene traccia di tutte le operazioni eseguite, dalla generazione dei file batch agli errori di caricamento configurazione.</li>
+        <li>Puoi ripulire lo schermo tramite il tasto <code class="badge">Pulisci</code> o esportarli in un file testuale con il tasto <code class="badge">Esporta</code> per successive consultazioni.</li>
+      </ol>
+    </div>
+
+    <!-- SEZIONE 6: AIUTO CONTESTUALE -->
+    <div class="guide-h2">&#10068; 6. Aiuto Contestuale</div>
+    <div class="guide-item">
+      Noterai in alto a destra, in ogni schermata principale del software, un piccolo bottone <code class="badge">❓ Aiuto</code>. 
+      Cliccandolo, si aprirà una comoda <b>finestra a comparsa (popup)</b> contenente le istruzioni esatte per la schermata che stai visualizzando, senza farti perdere il lavoro in corso!
+      <br><br><b>Scorciatoie Rapide:</b> Puoi premere in qualsiasi momento il tasto <b>F1</b> sulla tua tastiera e SmartInstaller aprirà automaticamente il popup d'aiuto per la schermata in cui ti trovi. Quando hai finito di leggere, ti basta premere <b>ESC</b> per farlo sparire all'istante!
+    </div>
+
+    <!-- SEZIONE 7: IMPOSTAZIONI GLOBALI -->
+    <div class="guide-h2" id="g-config">&#9881; 7. Impostazioni Globali</div>
+    <div class="guide-item">
+      Nella scheda <b>Configurazione</b> (nel menu principale) puoi impostare opzioni da condividere con l'intero team.
+      <br><br><b>Cartella "Copia Locale" (Download):</b> Puoi decidere il percorso esatto in cui SmartInstaller scaricherà o copierà i software (quando spunti la relativa casella). Se la cartella indicata non esiste sul nuovo PC da installare, SmartInstaller provvederà a crearla automaticamente al volo!
+      <br><br><b>&#128640; Manutenzione Drive (Sostituzione Rapida):</b> Questa funzione rileva automaticamente quali lettere di unit&agrave; (es. <code class="badge">L:</code>, <code class="badge">H:</code>) sono usate nei percorsi dei tuoi software.
+      Se sposti la libreria su un altro drive, puoi usare questo strumento per cambiare tutti i percorsi in un colpo solo direttamente nel database.
+      <ul style="margin-left:20px;margin-top:8px">
+        <li>Il sistema elenca solo i drive effettivamente presenti nei percorsi software.</li>
+        <li>Scegli il drive sorgente, scrivi la nuova lettera e clicca su <b>Applica</b>.</li>
+        <li>L'operazione &egrave; persistente e modifica permanentemente il file <code class="badge">config.json</code>.</li>
+        <li>&Egrave; consigliato fare una copia di backup della configurazione prima di procedere a sostituzioni massive.</li>
+      </ul>
+      <br><b>&#128194; Archivio Configurazioni (.json):</b> SmartInstaller può gestire più file di configurazione.
+      <ul style="margin-left:20px;margin-top:8px">
+        <li><b>Salva con nome:</b> Permette di creare una copia della configurazione attuale con un nuovo nome (es. "Laboratorio_B").</li>
+        <li><b>Carica:</b> Passa istantaneamente a un altro file di configurazione senza riavviare il programma.</li>
+        <li><b>Elimina:</b> Rimuove i file obsoleti (non è possibile eliminare la configurazione attualmente in uso).</li>
+      </ul>
+    </div>
+
+    <div class="guide-tip">
+      <b>&#128250; Suggerimento Pro:</b> Se lavori su PC diversi con lettere di disco differenti, imposta la lettera corretta in <b>Configurazione</b> prima di avviare qualsiasi installazione. Bastano 5 secondi e tutti i percorsi locali si adatteranno automaticamente!
+      <br><br>Se lavori in team, usa il tasto <b>&#128257; Ricarica</b> nell'intestazione blu per scaricare istantaneamente le ultime modifiche dai colleghi sul file <code class="badge">config.json</code> in rete.
+    </div>
+    
+    <p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:40px;border-top:1px solid #f1f5f9;padding-top:20px">
+      <b>Manuale Operativo v1.34</b> - Ideato e sviluppato per Gelsomino Lullo
+    </p>
+  </div>
+</div>
+</div>
+
+<!-- OVERLAY INSTALLAZIONE -->
+<div class="overlay hidden" id="installOverlay">
+  <div class="ov-box">
+    <div class="ov-title" id="ovTit">&#9203; Installazione in corso...</div>
+    <div id="ovStatus" style="font-size:13px;color:#64748b;margin-bottom:10px">Preparazione...</div>
+    <div class="prog"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div style="font-size:12px;color:#94a3b8;margin-top:6px;text-align:right" id="progTxt">0 / 0</div>
+    <div class="log-area" style="height:170px;margin-top:14px" id="ovLog"></div>
+    <div style="margin-top:12px;text-align:right">
+      <button class="btn btn-primary" id="ovCloseBtn" onclick="closeOverlay()" style="display:none">&#10003; Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY GUIDA CONTESTUALE -->
+<div class="overlay hidden" id="guideOverlay">
+  <div class="ov-box" style="width:700px; max-width:90%">
+    <div class="ov-title" id="goTit" style="color:#1e3a8a; display:flex; justify-content:space-between; align-items:center;">
+      <span>&#128214; Aiuto Contestuale</span>
+    </div>
+    <div id="goContent" style="margin-top:16px; margin-bottom:20px; color:#334155; line-height:1.6; font-size:14px; max-height:400px; overflow-y:auto; padding-right:8px;">
+      <!-- Contenuto dinamico -->
+    </div>
+    <div style="text-align:right; border-top:1px solid #e2e8f0; padding-top:16px;">
+      <button class="btn btn-sec" onclick="document.getElementById('guideOverlay').className='overlay hidden'">&#10005; Chiudi Aiuto</button>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+var cfg = { software: [], profiles: [], settings: { localCopyPath: "C:\\SmartInstaller_Local" } };
+var cfgPath = "";
+
+// ---- MANUTENZIONE DRIVE (v1.34) ----
+function getUsedDrives() {
+  var drives = {};
+  for(var i=0; i<cfg.software.length; i++) {
+    var p = cfg.software[i].path;
+    if (p && p.match(/^[A-Za-z]:\\/)) {
+      drives[p.charAt(0).toUpperCase()] = true;
+    }
+  }
+  return Object.keys(drives).sort();
+}
+
+function renderDriveTool() {
+  var area = document.getElementById("driveToolArea");
+  if (!area) return;
+  var drives = getUsedDrives();
+  if (drives.length === 0) {
+    area.innerHTML = "<div style='font-size:12px;color:#64748b'>Nessun percorso locale (es. L:\\) trovato nel database.</div>";
+    return;
+  }
+  var h = "<div style='display:flex;gap:10px;align-items:center;'>";
+  h += "<div style='font-size:12px;'>Sostituisci il Drive </div>";
+  h += "<select class='fi' id='oldDrive' style='width:60px;padding:2px;height:28px;'>";
+  for(var i=0; i<drives.length; i++) h += "<option value='"+drives[i]+"'>"+drives[i]+":</option>";
+  h += "</select>";
+  h += "<div style='font-size:12px;'> con </div>";
+  h += "<input class='fi' id='newDrive' maxlength='1' style='width:45px;padding:2px;height:28px;text-transform:uppercase;text-align:center' placeholder='M'>";
+  h += "<button class='btn btn-sec' style='padding:4px 10px;font-size:12px' onclick='bulkReplaceDrive()'>Applica a tutti</button>";
+  h += "</div>";
+  h += "<div style='margin-top:5px;font-size:10px;color:#ef4444'>* Questa operazione modifica il file config.json in modo permanente.</div>";
+  area.innerHTML = h;
+}
+
+function bulkReplaceDrive() {
+  var oldD = document.getElementById("oldDrive").value;
+  var newD = document.getElementById("newDrive").value.trim().toUpperCase();
+  if (!newD) { alert("Inserisci la nuova lettera."); return; }
+  if (oldD === newD) { alert("Le lettere sono identiche."); return; }
+  
+  var count = 0;
+  var regex = new RegExp("^" + oldD + ":\\\\", "i");
+  for(var i=0; i<cfg.software.length; i++) {
+    var p = cfg.software[i].path;
+    if (p && p.match(regex)) {
+      cfg.software[i].path = p.replace(regex, newD + ":\\");
+      count++;
+    }
+  }
+  
+  if (count > 0) {
+    saveCfg();
+    addLog("i", "Manutenzione Drive: convertiti " + count + " percorsi da " + oldD + ": a " + newD + ":");
+    renderAll();
+    renderDriveTool();
+    alert("Operazione completata con successo!\n" + count + " percorsi aggiornati nel database.");
+  } else {
+    alert("Nessun percorso trovato con la lettera selezionata.");
+  }
+}
+var baseDir = "";
+var editSwId = null;
+var editProfId = null;
+var selProfId = null;
+var fso = null;
+var wsh = null;
+var logLines = [];
+var swFilterCat = "";
+var swSearchText = "";
+
+function runSingleSW(id) {
+  var s = byId(cfg.software, id);
+  if (!s) return;
+  var batchName = "Installa_Singolo_" + s.name.replace(/[^a-zA-Z0-9]/g, "_") + ".bat";
+  var baseDir = cfgPath.substring(0, cfgPath.lastIndexOf("\\") + 1);
+  var scriptsDir = baseDir + "scripts\\";
+  if (!fso.FolderExists(scriptsDir)) fso.CreateFolder(scriptsDir);
+  var batchPath = scriptsDir + batchName;
+  var b = "@echo off\r\n";
+  b += "title SmartInstaller: " + s.name + "\r\n";
+  b += "echo ============================================================\r\n";
+  b += "echo  SmartInstaller v1.34 - IT Deployment Tool\r\n";
+  b += "echo ============================================================\r\n\r\n";
+  b += "echo Installazione: " + s.name + "...\r\n";
+  var finalPath = s.path;
+  var lowPath = finalPath.toLowerCase();
+  var isUrl = (lowPath.indexOf("http://") === 0 || lowPath.indexOf("https://") === 0);
+  var isPsCmd = (lowPath.indexOf("start-process") >= 0 || lowPath.indexOf("invoke-") >= 0 || lowPath.indexOf("get-") >= 0);
+  if (isUrl) {
+    var fileName = s.path.substring(s.path.lastIndexOf("/") + 1);
+    if (!fileName || fileName.indexOf(".") < 0) fileName = "downloaded_setup.exe";
+    var tempPath = cfg.settings.localCopyPath;
+    if (tempPath.charAt(tempPath.length-1) !== "\\") tempPath += "\\";
+    tempPath += fileName;
+    
+    b += "echo    Verifica directory di download...\r\n";
+    b += "if not exist \"" + cfg.settings.localCopyPath + "\" mkdir \"" + cfg.settings.localCopyPath + "\"\r\n";
+    b += "echo    Scaricamento da URL: " + s.path + "\r\n";
+    b += "powershell -Command \"Invoke-WebRequest -Uri '" + s.path + "' -OutFile '" + tempPath + "'\"\r\n";
+    finalPath = tempPath;
+  } else if (s.allowCopy && !s.allowInstall) {
+    // Gestione speciale Copia Locale (da Rete)
+    var fileNameNet = s.path.substring(s.path.lastIndexOf("\\") + 1);
+    var destPath = cfg.settings.localCopyPath;
+    if (destPath.charAt(destPath.length-1) !== "\\") destPath += "\\";
+    
+    b += "echo    Verifica directory di copia locale...\r\n";
+    b += "if not exist \"" + cfg.settings.localCopyPath + "\" mkdir \"" + cfg.settings.localCopyPath + "\"\r\n";
+    b += "echo    Copia del file in locale...\r\n";
+    b += "copy /Y \"" + s.path + "\" \"" + destPath + fileNameNet + "\"\r\n";
+    finalPath = destPath + fileNameNet;
+  }
+  if (isPsCmd) {
+    b += "echo    Esecuzione comando PowerShell...\r\n";
+    b += "powershell -Command \"" + s.path.replace(/"/g, "\\\"") + "\"\r\n";
+  } else {
+    b += "start /wait \"\" \"" + finalPath + "\" " + (s.args || "") + "\r\n";
+  }
+  b += "echo    Completato (exit code: %%errorlevel%%)\r\n";
+  if (isUrl) b += "if exist \"" + finalPath + "\" del /q \"" + finalPath + "\"\r\n";
+  b += "echo.\r\n";
+  b += "echo ============================================================\r\n";
+  b += "echo  OPERAZIONE COMPLETATA\r\n";
+  b += "echo ============================================================\r\n";
+  b += "pause\r\n";
+  try {
+    var f = fso.CreateTextFile(batchPath, true, false);
+    f.Write(b); f.Close();
+    wsh.Run("explorer.exe /select,\"" + batchPath + "\"");
+    if (confirm("Cartella aperta con il file selezionato.\nVuoi installare '" + s.name + "' adesso come Amministratore?")) {
+      wsh.Run("powershell -Command \"Start-Process -FilePath '" + batchPath + "' -Verb RunAs\"", 0, false);
+      addLog("s", "Eseguito installazione singola: " + s.name);
+    }
+  } catch(e) { alert("Errore: " + e.message); }
+}
+
+// ---- NAVIGAZIONE ----
+function showView(name) {
+  var views = ["install","software","profiles","log","guide"];
+  for (var i = 0; i < views.length; i++) {
+    document.getElementById("view-" + views[i]).className = (views[i] === name) ? "view active" : "view";
+    document.getElementById("nb" + i).className = (views[i] === name) ? "nav-btn active" : "nav-btn";
+  }
+  if (name === "install")  renderProfiles();
+  if (name === "software") renderSWTable();
+  if (name === "profiles") renderProfTable();
+}
+
+function openGuide(sectionId) {
+  var target = document.getElementById(sectionId);
+  var overlay = document.getElementById('guideOverlay');
+  var goTit = document.getElementById('goTit');
+  var goContent = document.getElementById('goContent');
+  
+  if (target && overlay && goTit && goContent) {
+    // Estrae il titolo (senza l'icona iniziale se presente, oppure mantenendola)
+    goTit.innerHTML = "<span>" + target.innerHTML + "</span>";
+    
+    // Raccoglie tutti i fratelli successivi finché non incontra un nuovo guide-h2 o fine contenitore
+    var htmlContent = "";
+    var node = target.nextElementSibling;
+    while (node) {
+      if (node.tagName.toLowerCase() === 'div' && node.className.indexOf('guide-h2') !== -1) {
+        break; // Fine della sezione
+      }
+      if (node.tagName.toLowerCase() === 'div' || node.tagName.toLowerCase() === 'p') {
+          htmlContent += node.outerHTML;
+      }
+      node = node.nextElementSibling;
+    }
+    
+    goContent.innerHTML = htmlContent;
+    overlay.className = "overlay"; // Mostra il popup rimuovendo 'hidden'
+  } else {
+    // Fallback alla visualizzazione intera se qualcosa va storto
+    showView('guide');
+  }
+}
+
+// Intercettazione globale tasto F1 ed ESC (Aiuto Contestuale)
+document.onkeydown = function(e) {
+  var key = window.event ? window.event.keyCode : e.keyCode;
+  if (key === 112) { // Tasto F1
+    if (window.event) { window.event.keyCode = 0; window.event.returnValue = false; } // IE prevention
+    if (e.preventDefault) e.preventDefault(); // Standard prevention
+    
+    // Scopri quale vista è attualmente attiva
+    var activeView = document.querySelector('.view.active');
+    if (activeView) {
+      if (activeView.id === 'view-install') openGuide('g-install');
+      else if (activeView.id === 'view-software') openGuide('g-library');
+      else if (activeView.id === 'view-profiles') openGuide('g-profiles');
+      else if (activeView.id === 'view-config') openGuide('g-config');
+      else if (activeView.id === 'view-log') openGuide('g-log');
+    }
+    return false;
+  } else if (key === 27) { // Tasto ESC
+    // Chiudi Modal Profili
+    var profOverlay = document.getElementById('profEditorOverlay');
+    if (profOverlay && profOverlay.style.display === 'block') {
+      closeProfileEditor();
+    }
+    // Chiudi Modal Guida
+    var guideOverlay = document.getElementById('guideOverlay');
+    if (guideOverlay && guideOverlay.className !== 'overlay hidden') {
+      guideOverlay.className = 'overlay hidden';
+    }
+  }
+};
+
+// ---- INIT ----
+function init() {
+  try {
+    window.moveTo(0, 0);
+    window.resizeTo(screen.availWidth, screen.availHeight);
+    fso = new ActiveXObject("Scripting.FileSystemObject");
+    wsh = new ActiveXObject("WScript.Shell");
+  } catch(e) {
+    alert("Errore: impossibile inizializzare ActiveX.\nAssicurarsi di aprire il file come .hta su Windows.");
+    return;
+  }
+
+  var dir = "";
+
+  // STRATEGIA 1: legge il percorso dal file creato dal BAT launcher.
+  // Il BAT copia l'HTA in %TEMP% e salva in si_cfgpath.txt la cartella di rete originale.
+  // Questo permette all'HTA di girare locale (nessuna restrizione zona sicurezza)
+  // ma di leggere/scrivere config.json dalla cartella di rete.
+  try {
+    var ptrFile = wsh.ExpandEnvironmentStrings("%TEMP%") + "\\si_cfgpath.txt";
+    if (fso.FileExists(ptrFile)) {
+      var f = fso.OpenTextFile(ptrFile, 1, false, -2);
+      dir = f.ReadAll(); f.Close();
+      dir = dir.replace(/[\r\n\s]+$/, ""); // trim
+      if (dir.length > 0 && dir.charAt(dir.length-1) !== "\\") dir += "\\";
+      // Verifica che la cartella esista davvero
+      if (!fso.FolderExists(dir)) dir = "";
+    }
+  } catch(ex) { dir = ""; }
+
+  // STRATEGIA 2 (fallback): parsing di location.href — funziona quando si apre l'HTA
+  // direttamente in locale senza passare dal BAT.
+  if (!dir) {
+    var href = location.href;
+    var filePath;
+    if (href.indexOf("file:////") === 0) {
+      filePath = "\\\\" + href.substring(9).replace(/\//g, "\\");
+    } else if (href.indexOf("file:///") === 0) {
+      filePath = href.substring(8).replace(/\//g, "\\");
+    } else {
+      filePath = href.replace(/file:\/*/,"").replace(/\//g, "\\");
+    }
+    dir = filePath.substring(0, filePath.lastIndexOf("\\") + 1);
+  }
+
+  baseDir = dir;
+  
+  // RICERCA AUTOMATICA CONFIG (.json)
+  var jsonFiles = [];
+  try {
+    var folder = fso.GetFolder(baseDir);
+    var files = new Enumerator(folder.Files);
+    for (; !files.atEnd(); files.moveNext()) {
+      var file = files.item();
+      if (file.Name.toLowerCase().slice(-5) === ".json") {
+        jsonFiles.push({ name: file.Name, date: file.DateLastModified });
+      }
+    }
+  } catch(e) {}
+
+  if (jsonFiles.length === 0) {
+    cfgPath = baseDir + "config.json";
+  } else if (jsonFiles.length === 1) {
+    cfgPath = baseDir + jsonFiles[0].name;
+  } else {
+    // Ordina per data decrescente (ultimo usato/modificato)
+    jsonFiles.sort(function(a,b){ return new Date(b.date) - new Date(a.date); });
+    cfgPath = baseDir + jsonFiles[0].name;
+  }
+
+  document.getElementById("hdrPath").innerText = cfgPath;
+  loadCfg();
+  renderAll();
+  showView("install");
+  addLog("s", "SmartInstaller v1.34 avviato - Licenza Freeware.");
+  
+  // Rimuove lo splash screen dopo un breve delay per garantire il rendering fluido
+  setTimeout(function(){ 
+    var s = document.getElementById("splash");
+    if(s) s.style.display = "none"; 
+  }, 200);
+}
+
+// ---- CONFIG ----
+function loadCfg() {
+  try {
+    if (fso.FileExists(cfgPath)) {
+      var f = fso.OpenTextFile(cfgPath, 1, false, -1);
+      var raw = f.ReadAll(); f.Close();
+      cfg = JSON.parse(raw);
+    } else {
+      cfg = { software: [], profiles: [], settings: { localCopyPath: "C:\\SmartInstaller_Local", libraryDrive: "L" } };
+      saveCfg(); // Crea il file vuoto se non esiste
+      addLog("s","Nuova configurazione creata: config.json");
+    }
+  } catch(e) {
+    addLog("e","Errore lettura config: " + e.message);
+    cfg = { software: [], profiles: [] };
+  }
+  
+  // Normalizzazione struttura per retrocompatibilità
+  if (!cfg.software) cfg.software = [];
+  if (!cfg.profiles) cfg.profiles = [];
+  if (!cfg.settings) cfg.settings = { localCopyPath: "C:\\SmartInstaller_Local" };
+  
+  // Migrazione: assicura che ogni profilo abbia il campo includes
+  for (var i=0; i<cfg.profiles.length; i++) {
+    if (!cfg.profiles[i].includes) cfg.profiles[i].includes = [];
+  }
+}
+
+function reloadCfg() {
+  addLog("i", "Ricaricamento dati in corso...");
+  loadCfg();
+  renderAll();
+  alert("Dati ricaricati correttamente.");
+}
+
+function saveCfg() {
+  try {
+    var f = fso.CreateTextFile(cfgPath, true, true);
+    f.Write(JSON.stringify(cfg, null, 2));
+    f.Close();
+    return true;
+  } catch(e) {
+    alert("Errore salvataggio: " + e.message);
+    addLog("e","Errore salvataggio: " + e.message);
+    return false;
+  }
+}
+
+// ---- GESTIONE MULTI-CONFIG ----
+function renderCfgList() {
+  var b = document.getElementById("cfgListBody");
+  if (!baseDir) { b.innerHTML = '<tr><td colspan="4" class="empty">Directory non disponibile.</td></tr>'; return; }
+  
+  var folder = fso.GetFolder(baseDir);
+  var files = new Enumerator(folder.Files);
+  var h = "";
+  var count = 0;
+  
+  for (; !files.atEnd(); files.moveNext()) {
+    var file = files.item();
+    if (file.Name.toLowerCase().slice(-5) === ".json") {
+      var fullPath = file.Path;
+      var isActive = (fullPath.toLowerCase() === cfgPath.toLowerCase());
+      var dateStr = file.DateLastModified;
+      
+      h += '<tr' + (isActive ? ' style="background:#f0f9ff"' : '') + '>';
+      h += '<td><b style="color:' + (isActive ? '#1d4ed8' : '#334155') + '">' + esc(file.Name) + '</b></td>';
+      h += '<td class="muted">' + dateStr + '</td>';
+      h += '<td>' + (isActive ? '<span class="badge b-green">In uso</span>' : '<span class="badge b-gray">Pronto</span>') + '</td>';
+      h += '<td class="flex gap8">';
+      if (!isActive) {
+        h += '<button class="btn btn-primary btn-tiny" onclick="loadNamedConfig(\'' + esc(file.Name) + '\')">Carica</button>';
+        h += '<button class="btn btn-danger btn-tiny" onclick="deleteConfig(\'' + esc(file.Name) + '\')">&#128465;</button>';
+      } else {
+        h += '<button class="btn btn-sec btn-tiny" disabled title="Configurazione attiva">In uso</button>';
+      }
+      h += '</td></tr>';
+      count++;
+    }
+  }
+  
+  if (count === 0) h = '<tr><td colspan="4" class="empty">Nessun file .json trovato.</td></tr>';
+  b.innerHTML = h;
+}
+
+function loadNamedConfig(filename) {
+  if (!confirm('Vuoi caricare la configurazione "' + filename + '"?\nLe modifiche non salvate alla configurazione attuale andranno perse.')) return;
+  cfgPath = baseDir + filename;
+  document.getElementById("hdrPath").innerText = cfgPath;
+  loadCfg();
+  renderAll();
+  renderCfgList();
+  addLog("s", "Caricata configurazione: " + filename);
+  alert("Configurazione '" + filename + "' caricata correttamente.");
+}
+
+function saveAsConfig() {
+  var name = document.getElementById("newCfgName").value.trim().replace(/[^a-zA-Z0-9_\-]/g, "");
+  if (!name) { alert("Inserisci un nome valido per il file."); return; }
+  var filename = name + ".json";
+  var newPath = baseDir + filename;
+  
+  if (fso.FileExists(newPath)) {
+    if (!confirm('Il file "' + filename + '" esiste gia\'. Sovrascriverlo?')) return;
+  }
+  
+  var oldPath = cfgPath;
+  cfgPath = newPath;
+  if (saveCfg()) {
+    addLog("s", "Salvato con nome: " + filename);
+    alert("Salvataggio completato: " + filename);
+    document.getElementById("hdrPath").innerText = cfgPath;
+    document.getElementById("newCfgName").value = "";
+    renderCfgList();
+  } else {
+    cfgPath = oldPath; // Ripristina path originale se fallisce
+  }
+}
+
+function deleteConfig(filename) {
+  var path = baseDir + filename;
+  if (path.toLowerCase() === cfgPath.toLowerCase()) {
+    alert("Impossibile eliminare la configurazione attiva."); return;
+  }
+  if (!confirm('Eliminare definitivamente il file "' + filename + '"?')) return;
+  
+  try {
+    fso.DeleteFile(path);
+    addLog("w", "Configurazione eliminata: " + filename);
+    renderCfgList();
+  } catch(e) {
+    alert("Errore eliminazione: " + e.message);
+  }
+}
+
+// ---- NAVIGAZIONE ----
+function showView(name) {
+  var views = ["install","software","profiles","config","log","guide"];
+  for (var i = 0; i < views.length; i++) {
+    var v = document.getElementById("view-" + views[i]);
+    if (v) v.className = (views[i] === name) ? "view active" : "view";
+    var b = document.getElementById("nb" + i);
+    if (b) b.className = (views[i] === name) ? "nav-btn active" : "nav-btn";
+  }
+  if (name === "install")  renderProfiles();
+  if (name === "software") renderSWTable();
+  if (name === "config") {
+    document.getElementById("cfgLocalDir").value = cfg.settings.localCopyPath;
+    renderDriveTool();
+    renderCfgList();
+  }
+}
+
+
+// ---- IMPOSTAZIONI GLOBALI ----
+function saveSettings() {
+  var p = document.getElementById("cfgLocalDir").value.trim();
+  if (!p) { alert("Il percorso non puo' essere vuoto."); return; }
+  cfg.settings.localCopyPath = p;
+  saveCfg();
+  addLog("i", "Impostazioni globali aggiornate. Percorso locale: " + p);
+  alert("Impostazioni salvate con successo.");
+}
+
+// ---- RESOLVE PROFILE (dipendenze) ----
+// Ritorna array di {swId, fromProfile} con deduplicazione
+function resolveProfile(profId) {
+  var p = byId(cfg.profiles, profId);
+  if (!p) return [];
+  var seen = {};
+  var result = [];
+  // Prima: sw dai profili inclusi
+  var inclIds = p.includes || [];
+  for (var i = 0; i < inclIds.length; i++) {
+    var ip = byId(cfg.profiles, inclIds[i]);
+    if (!ip) continue;
+    var ipSW = ip.software || [];
+    for (var j = 0; j < ipSW.length; j++) {
+      if (!seen[ipSW[j]]) {
+        seen[ipSW[j]] = true;
+        result.push({ swId: ipSW[j], fromProfile: ip.name });
+      }
+    }
+  }
+  // Poi: sw propri del profilo
+  var ownSW = p.software || [];
+  for (var k = 0; k < ownSW.length; k++) {
+    if (!seen[ownSW[k]]) {
+      seen[ownSW[k]] = true;
+      result.push({ swId: ownSW[k], fromProfile: null });
+    }
+  }
+  return result;
+}
+
+// ---- RENDERING: INSTALL VIEW ----
+function renderProfiles() {
+  var g = document.getElementById("pcardGrid");
+  if (cfg.profiles.length === 0) {
+    g.innerHTML = '<div class="empty">Nessun profilo configurato.<br>Vai su <b>Profili</b> per crearne uno.</div>';
+    document.getElementById("installPanel").style.display = "none";
+    return;
+  }
+  var h = "";
+  for (var i = 0; i < cfg.profiles.length; i++) {
+    var p = cfg.profiles[i];
+    var resolved = resolveProfile(p.id);
+    var incl = (p.includes||[]).length;
+    var sel = (selProfId === p.id) ? " sel" : "";
+    h += '<div class="pcard' + sel + '" onclick="selectProf(\'' + p.id + '\')">';
+    h += '<div class="pcard-icon">' + (p.icon || "&#128187;") + '</div>';
+    h += '<div class="pcard-name">' + esc(p.name) + '</div>';
+    h += '<div class="pcard-desc">' + esc(p.description || "") + '</div>';
+    h += '<div class="pcard-count">&#128230; ' + resolved.length + ' software totali';
+    if (incl > 0) h += ' <span class="badge b-purple">+' + incl + ' profili</span>';
+    h += '</div></div>';
+  }
+  g.innerHTML = h;
+}
+
+function selectProf(id) {
+  selProfId = id;
+  renderProfiles();
+  var p = byId(cfg.profiles, id);
+  if (!p) return;
+  var resolved = resolveProfile(id);
+  document.getElementById("installPanel").style.display = "block";
+  document.getElementById("ipTitle").innerText = "Profilo: " + p.name + "  (" + resolved.length + " software totali)";
+  var rows = "";
+  if (resolved.length === 0) {
+    rows = '<tr><td colspan="5" class="empty">Nessun software nel profilo.</td></tr>';
+  } else {
+    for (var i = 0; i < resolved.length; i++) {
+      var s = byId(cfg.software, resolved[i].swId);
+      if (!s) continue;
+      var fromTag = resolved[i].fromProfile ? '<span class="sw-src">da: ' + esc(resolved[i].fromProfile) + '</span>' : '';
+      rows += '<tr><td style="color:#94a3b8">' + (i+1) + '</td>';
+      rows += '<td><b class="name-link" onclick="switchToEditSW(\'' + s.id + '\')" title="Clicca per modificare questo software">' + esc(s.name) + '</b>' + fromTag + '</td>';
+      
+      var isUrl = (s.path.toLowerCase().indexOf("http://")===0 || s.path.toLowerCase().indexOf("https://")===0);
+      var isCmd = (s.path.toLowerCase().indexOf("start-process")>=0 || s.path.toLowerCase().indexOf("invoke-")>=0 || s.path.toLowerCase().indexOf("get-")>=0);
+      if(isUrl || isCmd) {
+          rows += '<td class="mono" style="max-width:180px;overflow:hidden" title="' + esc(s.path) + '">' + esc(s.path) + '</td>';
+      } else {
+          rows += '<td class="mono link" style="max-width:180px;overflow:hidden" onclick="openFolder(\'' + esc(s.path).replace(/\\/g,"\\\\") + '\')" title="Clicca per aprire la cartella: ' + esc(s.path) + '">' + esc(s.path) + '</td>';
+      }
+      
+      rows += '<td><span class="badge b-blue">' + esc(s.args || "\u2014") + '</span></td>';
+      rows += '<td>' + esc(s.category || "") + '</td>';
+      rows += '<td class="flex gap8">';
+      if (s.allowInstall !== false) rows += '<button class="btn btn-success btn-tiny" onclick="runSingleSW(\'' + s.id + '\')" title="Installa ora">\u25B6</button>';
+      if (s.allowCopy === true) rows += '<button class="btn btn-sec btn-tiny" onclick="copyToLocal(\'' + s.id + '\')" title="Copia in locale">&#128190;</button>';
+      rows += '</td></tr>';
+    }
+  }
+  document.getElementById("ipBody").innerHTML = rows;
+}
+
+// ---- RENDERING: SOFTWARE TABLE ----
+function renderSWTable() {
+  var b = document.getElementById("swBody");
+  var list = cfg.software;
+  
+  // Filtraggio dinamico
+  if (swFilterCat || swSearchText) {
+    var sLow = swSearchText ? swSearchText.toLowerCase() : "";
+    var cLow = swFilterCat ? swFilterCat.toLowerCase() : "";
+    list = filter(cfg.software, function(s) {
+      var matchCat = cLow ? (s.category && s.category.toLowerCase() === cLow) : true;
+      var matchText = sLow ? (s.name.toLowerCase().indexOf(sLow) >= 0 || s.path.toLowerCase().indexOf(sLow) >= 0) : true;
+      return matchCat && matchText;
+    });
+    document.getElementById("filterIndicator").style.display = "-ms-flexbox";
+    document.getElementById("filterIndicator").style.display = "flex";
+    document.getElementById("filterVal").innerText = (swFilterCat ? "Categoria: " + swFilterCat : "") + (swSearchText && swFilterCat ? " + " : "") + (swSearchText ? "Ricerca: " + swSearchText : "");
+  } else {
+    document.getElementById("filterIndicator").style.display = "none";
+  }
+
+  if (list.length === 0) {
+    b.innerHTML = '<tr><td colspan="5" class="empty">' + (swFilterCat || swSearchText ? "Nessun software corrisponde ai filtri." : "Nessun software. Aggiungine uno.") + '</td></tr>';
+    document.getElementById("swCount").innerText = "0 software";
+    return;
+  }
+  
+  // Ordinamento alfabetico
+  list.sort(function(a,b){ return a.name.localeCompare(b.name); });
+  
+  var h = "";
+  for (var i=0; i<list.length; i++) {
+    var s = list[i];
+    var pathShort = s.path.length > 60 ? s.path.substring(0,30) + "..." + s.path.substring(s.path.length-30) : s.path;
+    var catBadge = s.category ? '<span class="badge b-green" onclick="setFilterCat(\'' + s.category + '\')" style="cursor:pointer" title="Filtra per questa categoria">' + esc(s.category) + '</span>' : "";
+    var canIns = (s.allowInstall !== false);
+    var canCop = (s.allowCopy === true);
+    var isUrl = (s.path.toLowerCase().indexOf("http://")===0 || s.path.toLowerCase().indexOf("https://")===0);
+    var isCmd = (s.path.toLowerCase().indexOf("start-process")>=0 || s.path.toLowerCase().indexOf("invoke-")>=0 || s.path.toLowerCase().indexOf("get-")>=0);
+    
+    h += '<tr>';
+    h += '<td><input type="checkbox" class="sw-sel" value="' + s.id + '" onclick="updateBulkBar()"></td>';
+    h += '<td style="font-weight:600;cursor:pointer" onclick="editSW(\'' + s.id + '\')" title="Clicca per modificare">' + esc(s.name) + '</td>';
+    h += '<td>' + catBadge + '</td>';
+    
+    if(isUrl || isCmd) {
+      h += '<td class="mono" title="' + esc(s.path) + '">' + esc(pathShort) + '</td>';
+    } else {
+      h += '<td class="mono link" onclick="openFolder(\'' + esc(s.path).replace(/\\/g,"\\\\") + '\')" title="Clicca per aprire la cartella">' + esc(pathShort) + '</td>';
+    }
+    h += '<td><span class="badge b-gray">' + esc(s.args || "") + '</span></td>';
+    h += '<td class="flex gap8">';
+    if (canIns) h += '<button class="btn btn-primary btn-tiny" onclick="runSingleSW(\'' + s.id + '\')" title="Installa ora">\u25B6</button>';
+    if (canCop) h += '<button class="btn btn-sec btn-tiny" onclick="copyToLocal(\'' + s.id + '\')" title="Copia/Scarica in locale (C:\\SmartInstaller_Local)">&#128190;</button>';
+    h += '<button class="btn btn-sec btn-tiny" onclick="editSW(\'' + s.id + '\')">&#9998;</button>';
+    h += '<button class="btn btn-sec btn-tiny" onclick="cloneSW(\'' + s.id + '\')" title="Duplica riga">&#128101;</button>';
+    h += '<button class="btn btn-danger btn-tiny" onclick="delSW(\'' + s.id + '\')">&#128465;</button>';
+    h += '</td></tr>';
+  }
+  b.innerHTML = h;
+  document.getElementById("swCount").innerText = list.length + " software";
+  document.getElementById("selectAll").checked = false;
+  updateBulkBar();
+}
+
+function toggleSelectAll() {
+  var chk = document.getElementById("selectAll").checked;
+  var boxes = document.getElementsByClassName("sw-sel");
+  for (var i=0; i<boxes.length; i++) boxes[i].checked = chk;
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  var boxes = document.getElementsByClassName("sw-sel");
+  var sel = [];
+  for (var i=0; i<boxes.length; i++) { if (boxes[i].checked) sel.push(boxes[i].value); }
+  
+  var bar = document.getElementById("bulkBar");
+  if (sel.length > 0) {
+    bar.style.display = "-ms-flexbox";
+    bar.style.display = "flex";
+    document.getElementById("bulkCountTxt").innerText = sel.length + " software selezionati";
+    
+    // Popola dropdown profili solo se necessario per non perdere la selezione
+    var selProf = document.getElementById("bulkDestProf");
+    if (selProf.options.length !== cfg.profiles.length) {
+      var currentVal = selProf.value;
+      var opt = "";
+      for (var j=0; j<cfg.profiles.length; j++) {
+        opt += '<option value="' + cfg.profiles[j].id + '">' + esc(cfg.profiles[j].name) + '</option>';
+      }
+      selProf.innerHTML = opt;
+      if (currentVal) selProf.value = currentVal;
+    }
+  } else {
+    bar.style.display = "none";
+  }
+}
+
+function bulkAddToProfile() {
+  var boxes = document.getElementsByClassName("sw-sel");
+  var selIds = [];
+  for (var i=0; i<boxes.length; i++) { if (boxes[i].checked) selIds.push(boxes[i].value); }
+  if (selIds.length === 0) return;
+  
+  var profId = document.getElementById("bulkDestProf").value;
+  var p = byId(cfg.profiles, profId);
+  if (!p) return;
+  
+  if (!p.software) p.software = [];
+  var added = 0;
+  for (var j=0; j<selIds.length; j++) {
+    var sid = selIds[j];
+    var exists = false;
+    for (var k=0; k<p.software.length; k++) {
+      if (String(p.software[k]) === String(sid)) { exists = true; break; }
+    }
+    if (!exists) {
+      p.software.push(sid);
+      added++;
+    }
+  }
+  
+  saveCfg();
+  alert("Aggiunti " + added + " software al profilo '" + p.name + "'.\n" + (selIds.length - added) + " erano già presenti o saltati.");
+  resetSWFilters(); // Opzionale: pulisce filtri e selezione
+}
+
+function bulkCreateProfile() {
+  var boxes = document.getElementsByClassName("sw-sel");
+  var selIds = [];
+  for (var i=0; i<boxes.length; i++) { if (boxes[i].checked) selIds.push(boxes[i].value); }
+  if (selIds.length === 0) return;
+
+  var name = prompt("Inserisci il nome del nuovo profilo:", "Nuovo Profilo");
+  if (!name) return;
+
+  var newProf = {
+    id: uid(),
+    name: name,
+    description: "Creato dalla selezione software",
+    icon: "&#128194;",
+    software: selIds,
+    includes: []
+  };
+  
+  cfg.profiles.push(newProf);
+  saveCfg();
+  alert("Profilo '" + name + "' creato con " + selIds.length + " software.");
+  showView("profiles");
+}
+
+function copyToLocal(id) {
+  var s = byId(cfg.software, id);
+  if (!s) return;
+  
+  var lowPath = s.path.toLowerCase();
+  var isUrl = (lowPath.indexOf("http://") === 0 || lowPath.indexOf("https://") === 0);
+  var destDir = cfg.settings.localCopyPath;
+  if (destDir.charAt(destDir.length-1) !== "\\") destDir += "\\";
+
+  try {
+    // 1. Verifica/Crea directory di destinazione
+    if (!fso.FolderExists(destDir)) {
+      addLog("i", "Creazione directory locale: " + destDir);
+      fso.CreateFolder(destDir);
+    }
+
+    var finalDest = "";
+    if (isUrl) {
+      // 2a. Gestione Download da URL
+      var fileName = s.path.substring(s.path.lastIndexOf("/") + 1);
+      if (!fileName || fileName.indexOf(".") < 0) fileName = "downloaded_file.exe";
+      finalDest = destDir + fileName;
+      
+      addLog("i", "Inizio download diretto: " + s.name);
+      var psCmd = "powershell -WindowStyle Hidden -Command \"Invoke-WebRequest -Uri '" + s.path + "' -OutFile '" + finalDest + "'\"";
+      wsh.Run(psCmd, 0, true);
+      addLog("s", "Download completato: " + fileName);
+    } else {
+      // 2b. Gestione Copia da Rete/Locale
+      var fileNameNet = s.path.substring(s.path.lastIndexOf("\\") + 1);
+      finalDest = destDir + fileNameNet;
+      
+      addLog("i", "Copia in corso: " + s.name);
+      fso.CopyFile(s.path, finalDest, true);
+      addLog("s", "Copia completata: " + fileNameNet);
+    }
+
+    // 3. Mostra la cartella nel file explorer ed evidenzia il file
+    if (fso.FileExists(finalDest)) {
+      wsh.Run("explorer.exe /select,\"" + finalDest + "\"");
+    } else {
+      wsh.Run("explorer.exe \"" + destDir + "\"");
+    }
+  } catch(e) {
+    alert("Errore durante la copia/download:\n" + e.message);
+    addLog("e", "Errore copia locale (" + s.name + "): " + e.message);
+  }
+}
+
+function switchToEditSW(id) {
+  showView("software");
+  editSW(id);
+  // Scorri la pagina in basso verso il form di modifica
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function openFolder(path) {
+  try {
+    if(!path) return;
+    if(!fso.FileExists(path) && !fso.FolderExists(path)) {
+      // Prova a dedurre la cartella se il file non esiste (es: se \setup.exe e' rotto)
+      var dirOnly = path.substring(0, path.lastIndexOf("\\"));
+      if(fso.FolderExists(dirOnly)) {
+         wsh.Run("explorer.exe \"" + dirOnly + "\"");
+         return;
+      }
+      alert("Il percorso o file specificato non esiste o non ? raggiungibile:\n\n" + path);
+      return;
+    }
+    wsh.Run("explorer.exe /select,\"" + path + "\"");
+  } catch(e) {
+    alert("Impossibile aprire la cartella.\nErrore: " + e.message);
+  }
+}
+
+function setFilterCat(cat) {
+  swFilterCat = cat;
+  renderSWTable();
+}
+
+function onSWSearch() {
+  swSearchText = document.getElementById("swSearchInput").value.toLowerCase().trim();
+  renderSWTable();
+}
+
+function resetSWFilters() {
+  swFilterCat = "";
+  swSearchText = "";
+  document.getElementById("swSearchInput").value = "";
+  renderSWTable();
+}
+
+// ---- RENDERING: PROFILES TABLE ----
+function renderProfTable() {
+  document.getElementById("profCount").innerText = cfg.profiles.length + " profili";
+  var h = "";
+  if (cfg.profiles.length === 0) {
+    h = '<tr><td colspan="6" class="empty">Nessun profilo. Creane uno.</td></tr>';
+  } else {
+    for (var i = 0; i < cfg.profiles.length; i++) {
+      var p = cfg.profiles[i];
+      var resolved = resolveProfile(p.id);
+      var inclNames = [];
+      var inclIds = p.includes || [];
+      for (var j = 0; j < inclIds.length; j++) {
+        var ip = byId(cfg.profiles, inclIds[j]);
+        if (ip) inclNames.push(ip.name);
+      }
+      h += '<tr><td><b>' + (p.icon || "&#128187;") + ' ' + esc(p.name) + '</b></td>';
+      h += '<td>' + esc(p.description || "") + '</td>';
+      h += '<td><span class="badge b-blue">' + (p.software||[]).length + '</span></td>';
+      h += '<td>' + (inclNames.length > 0 ? '<span class="badge b-purple">' + esc(inclNames.join(', ')) + '</span>' : '<span class="muted">\u2014</span>') + '</td>';
+      h += '<td><span class="badge b-green">' + resolved.length + ' tot</span></td>';
+      h += '<td style="white-space:nowrap">';
+      h += '<button class="btn btn-sec" onclick="editProf(\'' + p.id + '\')" style="margin-right:4px">&#9998;</button>';
+      h += '<button class="btn btn-danger" onclick="delProf(\'' + p.id + '\')">&#128465;</button>';
+      h += '</td></tr>';
+    }
+  }
+  document.getElementById("profBody").innerHTML = h;
+}
+
+// ---- PROFILES CRUD ----
+function openProfileEditor(id) {
+  var overlay = document.getElementById("profEditorOverlay");
+  overlay.style.display = "block";
+  document.body.style.overflow = "hidden"; // Blocca scroll body
+  
+  if (id) {
+    var p = byId(cfg.profiles, id);
+    if (!p) return;
+    editProfId = id;
+    document.getElementById("profFTitle").innerHTML = "&#9998; Modifica Profilo";
+    document.getElementById("profSaveBtn").innerText = "Aggiorna Profilo";
+    set("profName", p.name);
+    set("profDesc", p.description || "");
+    set("profIcon", p.icon || "&#128187;");
+    renderProfSWList(p.software || []);
+    renderProfIncludesList(p.includes || [], id);
+  } else {
+    resetProfForm();
+    renderProfSWList([]);
+    renderProfIncludesList([], null);
+  }
+  updateProfEditorStats();
+}
+
+function closeProfileEditor() {
+  document.getElementById("profEditorOverlay").style.display = "none";
+  document.body.style.overflow = "auto";
+  editProfId = null;
+}
+
+function renderProfSWList(selIds) {
+  var c = document.getElementById("profSWList");
+  if (cfg.software.length === 0) {
+    c.innerHTML = '<div style="padding:20px;color:#94a3b8;text-align:center">Nessun software in libreria</div>';
+    return;
+  }
+  var h = "";
+  // Ordina per nome
+  var list = [].concat(cfg.software).sort(function(a,b){ return a.name.localeCompare(b.name); });
+  for (var i = 0; i < list.length; i++) {
+    var s = list[i];
+    var isSel = (indexOf(selIds, s.id) >= 0);
+    var chk = isSel ? " checked" : "";
+    var cls = isSel ? "sw-item-large selected" : "sw-item-large";
+    h += '<div class="' + cls + '" data-name="' + s.name.toLowerCase() + '">';
+    h += '<input type="checkbox" id="chk_' + s.id + '" value="' + s.id + '"' + chk + ' onclick="updateProfEditorStats(this)">';
+    h += '<label for="chk_' + s.id + '">';
+    h += '<span style="font-size:14px; color:#1e3a8a">' + esc(s.name) + '</span>';
+    if (s.category) h += ' <span class="badge b-gray" style="margin-left:6px; font-weight:400">' + esc(s.category) + '</span>';
+    h += '</label></div>';
+  }
+  c.innerHTML = h;
+}
+
+function renderProfIncludesList(selIds, excludeId) {
+  var c = document.getElementById("profIncludesList");
+  var others = filter(cfg.profiles, function(p) { return p.id !== excludeId; });
+  if (others.length === 0) {
+    c.innerHTML = '<div style="padding:20px;color:#94a3b8;text-align:center">Nessun altro profilo disponibile</div>';
+    return;
+  }
+  var h = "";
+  for (var i = 0; i < others.length; i++) {
+    var p = others[i];
+    var isSel = (indexOf(selIds, p.id) >= 0);
+    var chk = isSel ? " checked" : "";
+    var cls = isSel ? "sw-item-large selected" : "sw-item-large";
+    var cnt = (p.software||[]).length;
+    h += '<div class="' + cls + '" data-name="' + p.name.toLowerCase() + '">';
+    h += '<input type="checkbox" id="pinc_' + p.id + '" value="' + p.id + '"' + chk + ' onclick="updateProfEditorStats(this)">';
+    h += '<label for="pinc_' + p.id + '">';
+    h += '<span style="font-size:14px; color:#1e3a8a">' + (p.icon || '&#128193;') + ' ' + esc(p.name) + '</span>';
+    h += ' <span class="muted" style="margin-left:6px">(' + cnt + ' software)</span>';
+    h += '</label></div>';
+  }
+  c.innerHTML = h;
+}
+
+function filterPropriList() {
+  var txt = val("searchPropri").toLowerCase();
+  var items = document.getElementById("profSWList").querySelectorAll(".sw-item-large");
+  for(var i=0; i<items.length; i++) {
+    var match = items[i].getAttribute("data-name").indexOf(txt) >= 0;
+    items[i].style.display = match ? "flex" : "none";
+  }
+}
+
+function filterInclList() {
+  var txt = val("searchIncl").toLowerCase();
+  var items = document.getElementById("profIncludesList").querySelectorAll(".sw-item-large");
+  for(var i=0; i<items.length; i++) {
+    var match = items[i].getAttribute("data-name").indexOf(txt) >= 0;
+    items[i].style.display = match ? "flex" : "none";
+  }
+}
+
+function updateProfEditorStats(el) {
+  if (el) {
+    // Evidenzia visivamente la riga se e' un checkbox
+    var row = el.parentNode;
+    if (el.checked) row.className = row.className.replace("selected","") + " selected";
+    else row.className = row.className.replace(" selected","");
+  }
+
+  var propri = getCheckedSW();
+  var incl = getCheckedIncludes();
+  document.getElementById("cntPropri").innerText = propri.length + " selezionati";
+  document.getElementById("cntIncl").innerText = incl.length + " selezionati";
+  
+  // Calcolo totale approssimativo (non deduplicato in real-time)
+  var total = propri.length;
+  for (var i=0; i<incl.length; i++) {
+    var p = byId(cfg.profiles, incl[i]);
+    if (p) total += (p.software||[]).length;
+  }
+  document.getElementById("totalSWBadge").innerText = "Totale stimato: " + total + " software";
+}
+
+function saveProfile() {
+  var name = val("profName");
+  if (!name) { alert("Il nome profilo è obbligatori."); return; }
+  var p = {
+    name: name,
+    description: val("profDesc"),
+    icon: val("profIcon") || "&#128187;",
+    software: getCheckedSW(),
+    includes: getCheckedIncludes()
+  };
+  if (editProfId) {
+    var ep = byId(cfg.profiles, editProfId);
+    if (ep) {
+       ep.name = p.name; ep.description = p.description; ep.icon = p.icon;
+       ep.software = p.software; ep.includes = p.includes;
+    }
+    addLog("i", "Profilo aggiornato: " + name);
+  } else {
+    p.id = uid();
+    cfg.profiles.push(p);
+    addLog("i", "Profilo creato: " + name);
+  }
+  saveCfg(); renderAll(); closeProfileEditor();
+}
+
+function editProf(id) { openProfileEditor(id); }
+
+function delProf(id) {
+  var p = byId(cfg.profiles, id);
+  if (!p || !confirm('Eliminare il profilo "' + p.name + '"?')) return;
+  cfg.profiles = filter(cfg.profiles, function(x){ return x.id !== id; });
+  // Rimuovi questo profilo dalle inclusioni di altri
+  for (var i=0; i<cfg.profiles.length; i++) {
+    cfg.profiles[i].includes = filter(cfg.profiles[i].includes||[], function(x){ return x !== id; });
+  }
+  addLog("w", "Profilo eliminato: " + p.name);
+  saveCfg(); renderAll();
+}
+
+function resetProfForm() {
+  editProfId = null;
+  document.getElementById("profFTitle").innerHTML = "&#10133; Crea Nuovo Profilo";
+  document.getElementById("profSaveBtn").innerText = "Salva Profilo";
+  set("profName",""); set("profDesc",""); set("profIcon","&#128187;");
+  set("searchPropri",""); set("searchIncl","");
+}
+
+function getCheckedSW() {
+  var boxes = document.getElementById("profSWList").querySelectorAll("input[type=checkbox]");
+  var r = [];
+  for (var i = 0; i < boxes.length; i++) { if (boxes[i].checked) r.push(boxes[i].value); }
+  return r;
+}
+
+function getCheckedIncludes() {
+  var boxes = document.getElementById("profIncludesList").querySelectorAll("input[type=checkbox]");
+  var r = [];
+  for (var i = 0; i < boxes.length; i++) { if (boxes[i].checked) r.push(boxes[i].value); }
+  return r;
+}
+
+// ---- SOFTWARE CRUD ----
+function saveSW() {
+  var name = document.getElementById("swName").value.trim();
+  var path = document.getElementById("swPath").value.trim();
+  if (!name || !path) { alert("Nome e percorso sono obbligatori."); return; }
+  if (editSwId) {
+    var s = byId(cfg.software, editSwId);
+    if (s) { 
+      s.name=name; s.path=path; s.args=val("swArgs"); s.category=val("swCat"); s.notes=val("swNotes");
+      s.allowInstall = document.getElementById("swAllowInstall").checked;
+      s.allowCopy = document.getElementById("swAllowCopy").checked;
+      s.pause = document.getElementById("swPause").checked;
+    }
+    addLog("i","Software aggiornato: " + name);
+  } else {
+    cfg.software.push({ 
+      id: uid(), name:name, path:path, args:val("swArgs"), category:val("swCat"), notes:val("swNotes"),
+      allowInstall: document.getElementById("swAllowInstall").checked,
+      allowCopy: document.getElementById("swAllowCopy").checked,
+      pause: document.getElementById("swPause").checked
+    });
+    addLog("i","Software aggiunto: " + name);
+  }
+  saveCfg(); renderSWTable(); resetSWForm();
+}
+
+function editSW(id) {
+  var s = byId(cfg.software, id);
+  if (!s) return;
+  editSwId = id;
+  document.getElementById("swFTitle").innerText = "Modifica Software";
+  document.getElementById("swSaveBtn").innerText = "Aggiorna";
+  set("swName", s.name); set("swPath", s.path); set("swArgs", s.args||"");
+  set("swCat", s.category||""); set("swNotes", s.notes||"");
+  document.getElementById("swAllowInstall").checked = (s.allowInstall !== false);
+  document.getElementById("swAllowCopy").checked = (s.allowCopy === true);
+  document.getElementById("swPause").checked = (s.pause !== false);
+}
+
+function cloneSW(id) {
+  var s = byId(cfg.software, id);
+  if (!s) return;
+  editSwId = null; 
+  document.getElementById("swFTitle").innerText = "Duplica Software";
+  document.getElementById("swSaveBtn").innerText = "Salva";
+  set("swName", s.name + " (Copia)"); 
+  set("swPath", s.path); set("swArgs", s.args||"");
+  set("swCat", s.category||""); set("swNotes", s.notes||"");
+  document.getElementById("swAllowInstall").checked = (s.allowInstall !== false);
+  document.getElementById("swAllowCopy").checked = (s.allowCopy === true);
+  document.getElementById("swPause").checked = (s.pause !== false);
+  document.getElementById("swName").focus();
+}
+
+function delSW(id) {
+  var s = byId(cfg.software, id);
+  if (!s || !confirm('Eliminare "' + s.name + '"?\nViene rimosso anche da tutti i profili.')) return;
+  cfg.software = filter(cfg.software, function(x){ return x.id !== id; });
+  for (var i = 0; i < cfg.profiles.length; i++) {
+    cfg.profiles[i].software = filter(cfg.profiles[i].software||[], function(x){ return x !== id; });
+  }
+  addLog("w","Software eliminato: " + s.name);
+  saveCfg(); renderSWTable();
+}
+
+function resetSWForm() {
+  editSwId = null;
+  document.getElementById("swFTitle").innerText = "Aggiungi Software";
+  document.getElementById("swSaveBtn").innerText = "Salva";
+  set("swName",""); set("swPath",""); set("swArgs",""); set("swCat",""); set("swNotes","");
+  document.getElementById("swAllowInstall").checked = true;
+  document.getElementById("swAllowCopy").checked = false;
+  document.getElementById("swPause").checked = true;
+}
+
+function browsePath() {
+  try {
+    // Determina la directory di partenza dal campo gia' compilato
+    var currentPath = document.getElementById("swPath").value.trim();
+    var initDir = "\\\\";
+    if (currentPath) {
+      var lastSlash = currentPath.lastIndexOf("\\");
+      if (lastSlash > 0) initDir = currentPath.substring(0, lastSlash);
+    }
+
+    // File temporaneo dove PowerShell scrivera' il percorso scelto
+    var tempFile = wsh.ExpandEnvironmentStrings("%TEMP%") + "\\schooldeploy_pick.txt";
+
+    // Cancella eventuale file precedente
+    if (fso.FileExists(tempFile)) fso.DeleteFile(tempFile);
+
+    // Script PowerShell: apre OpenFileDialog nativo di Windows
+    var ps = "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; " +
+             "$d = New-Object System.Windows.Forms.OpenFileDialog; " +
+             "$d.Title = 'Seleziona il file di installazione'; " +
+             "$d.Filter = 'Eseguibili e MSI|*.exe;*.msi;*.msp;*.msu|Tutti i file|*.*'; " +
+             "$d.InitialDirectory = '" + initDir.replace(/'/g, "''") + "'; " +
+             "$d.CheckFileExists = $false; " +
+             "if ($d.ShowDialog() -eq 'OK') { $d.FileName | Out-File -FilePath '" + tempFile + "' -Encoding Default -NoNewline }";
+
+    // Esegue PowerShell in finestra nascosta e attende
+    var cmd = "powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -Command \"" + ps.replace(/"/g, '\\"') + "\"";
+    wsh.Run(cmd, 0, true); // 0=hidden, true=attendi fine
+
+    // Legge il risultato
+    if (fso.FileExists(tempFile)) {
+      var f = fso.OpenTextFile(tempFile, 1, false, -2);  // -2 = system default (ANSI)
+      var result = f.ReadAll();
+      f.Close();
+      fso.DeleteFile(tempFile);
+      result = result.replace(/^\s+|\s+$/g, ""); // trim
+      if (result && result.length > 0) {
+        document.getElementById("swPath").value = result;
+        // Auto-compila il nome se vuoto
+        var nameField = document.getElementById("swName");
+        if (!nameField.value.trim()) {
+          var fname = result.substring(result.lastIndexOf("\\") + 1);
+          fname = fname.replace(/\.(exe|msi|msp|msu)$/i, "").replace(/[-_]/g, " ");
+          nameField.value = fname;
+        }
+      }
+    }
+  } catch(e) {
+    alert("Errore apertura dialogo: " + e.message + "\n\nInserisci il percorso manualmente nel campo.");
+    document.getElementById("swPath").focus();
+  }
+}
+
+
+// ---- INSTALLAZIONE ----
+// ---- INSTALLAZIONE (v1.3: Generatore Batch) ----
+function startInstall() {
+  if (!selProfId) { alert("Seleziona un profilo prima."); return; }
+  var p = byId(cfg.profiles, selProfId);
+  if (!p) return;
+  var resolved = resolveProfile(selProfId);
+  if (resolved.length === 0) { alert("Il profilo non contiene software."); return; }
+
+  var batchName = "Installa_" + p.name.replace(/[^a-zA-Z0-9]/g, "_") + ".bat";
+  var baseDir = cfgPath.substring(0, cfgPath.lastIndexOf("\\") + 1);
+  var scriptsDir = baseDir + "scripts\\";
+  if (!fso.FolderExists(scriptsDir)) fso.CreateFolder(scriptsDir);
+  var batchPath = scriptsDir + batchName;
+
+  var b = "@echo off\r\n";
+  b += "title Installazione: " + p.name + "\r\n";
+  b += "echo ============================================================\r\n";
+  b += "echo  SmartInstaller v1.34 - Deployment Profilo: " + p.name + "\r\n";
+  b += "echo ============================================================\r\n\r\n";
+
+  for (var i = 0; i < resolved.length; i++) {
+    var s = byId(cfg.software, resolved[i].swId);
+    if (!s || s.allowInstall === false) continue;
+    var from = resolved[i].fromProfile ? " (da " + resolved[i].fromProfile + ")" : "";
+    b += "echo [" + (i+1) + "/" + resolved.length + "] Installazione: " + s.name + from + "...\r\n";
+    
+    var finalPath = s.path;
+    var lowPath = finalPath.toLowerCase();
+    var isUrl = (lowPath.indexOf("http://") === 0 || lowPath.indexOf("https://") === 0);
+    var isPsCmd = (lowPath.indexOf("start-process") >= 0 || lowPath.indexOf("invoke-") >= 0 || lowPath.indexOf("get-") >= 0);
+    
+    if (isUrl) {
+      var fileName = s.path.substring(s.path.lastIndexOf("/") + 1);
+      if (!fileName || fileName.indexOf(".") < 0) fileName = "downloaded_setup.exe";
+      var tempPath = cfg.settings.localCopyPath;
+      if (tempPath.charAt(tempPath.length-1) !== "\\") tempPath += "\\";
+      tempPath += fileName;
+      
+      b += "echo    Verifica directory di download...\r\n";
+      b += "if not exist \"" + cfg.settings.localCopyPath + "\" mkdir \"" + cfg.settings.localCopyPath + "\"\r\n";
+      b += "echo    Scaricamento da URL: " + s.path + "\r\n";
+      b += "powershell -Command \"Invoke-WebRequest -Uri '" + s.path + "' -OutFile '" + tempPath + "'\"\r\n";
+      finalPath = tempPath;
+    } else if (s.allowCopy && !s.allowInstall) {
+      // Copia Locale Diretta (da Rete)
+      var fileNameNet = s.path.substring(s.path.lastIndexOf("\\") + 1);
+      var destPath = cfg.settings.localCopyPath;
+      if (destPath.charAt(destPath.length-1) !== "\\") destPath += "\\";
+      
+      b += "echo    Verifica directory di copia locale...\r\n";
+      b += "if not exist \"" + cfg.settings.localCopyPath + "\" mkdir \"" + cfg.settings.localCopyPath + "\"\r\n";
+      b += "echo    Copia del file in locale...\r\n";
+      b += "copy /Y \"" + s.path + "\" \"" + destPath + fileNameNet + "\"\r\n";
+      finalPath = destPath + fileNameNet;
+    }
+
+    if (isPsCmd) {
+      b += "echo    Esecuzione comando PowerShell...\r\n";
+      b += "powershell -Command \"" + s.path.replace(/"/g, "\\\"") + "\"\r\n";
+    } else if (s.allowInstall) {
+      b += "start /wait \"\" \"" + finalPath + "\" " + (s.args || "") + "\r\n";
+    }
+    
+    b += "echo    Completato (exit code: %%errorlevel%%)\r\n";
+    if (isUrl) b += "if exist \"" + finalPath + "\" del /q \"" + finalPath + "\"\r\n";
+    b += "echo.\r\n";
+    if (s.pause !== false) b += "pause\r\n";
+  }
+
+  b += "echo ============================================================\r\n";
+  b += "echo  INSTALLAZIONE COMPLETATA\r\n";
+  b += "echo ============================================================\r\n";
+
+  try {
+    var f = fso.CreateTextFile(batchPath, true, false); // ASCII/ANSI per batch
+    f.Write(b);
+    f.Close();
+
+    wsh.Run("explorer.exe /select,\"" + batchPath + "\"");
+
+    var msg = "Cartella aperta con lo script selezionato.\n\n";
+    msg += "Vuoi eseguire l'installazione del profilo '" + p.name + "' ADESSO come Amministratore?\n";
+    msg += "(Richiede una sola conferma UAC)";
+
+    if (confirm(msg)) {
+      var psCmd = "Start-Process -FilePath '" + batchPath + "' -Verb RunAs";
+      wsh.Run("powershell -Command \"" + psCmd + "\"", 0, false);
+      addLog("s", "Eseguito batch: " + batchName + " (richiesta UAC)");
+    }
+  } catch(e) {
+    alert("Errore generazione batch: " + e.message);
+    addLog("e", "Errore batch: " + e.message);
+  }
+}
+
+
+
+
+
+function setProgress(cur, tot) {
+  var pct = tot > 0 ? Math.round((cur/tot)*100) : 0;
+  document.getElementById("progFill").style.width = pct + "%";
+  document.getElementById("progTxt").innerText = cur + " / " + tot;
+}
+
+function closeOverlay() {
+  document.getElementById("installOverlay").className = "overlay hidden";
+  showView("log");
+}
+
+// ---- LOG ----
+function addLog(type, msg) {
+  var now = new Date();
+  var ts = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+  logLines.push("[" + ts + "] " + msg);
+  var a = document.getElementById("logArea");
+  var d = document.createElement("div");
+  d.className = "ll l" + (type==="s"?"s":type==="e"?"e":type==="w"?"w":"i");
+  d.innerText = "[" + ts + "] " + msg;
+  a.appendChild(d); a.scrollTop = a.scrollHeight;
+}
+
+function ovLog(type, msg) {
+  var a = document.getElementById("ovLog");
+  var d = document.createElement("div");
+  d.className = "ll l" + (type==="s"?"s":type==="e"?"e":type==="w"?"w":"i");
+  d.innerText = msg;
+  a.appendChild(d); a.scrollTop = a.scrollHeight;
+}
+
+function clearLog() {
+  logLines = [];
+  document.getElementById("logArea").innerHTML = '<div class="ll li">Log pulito.</div>';
+}
+
+function exportLog() {
+  if (logLines.length === 0) { alert("Log vuoto."); return; }
+  try {
+    var now = new Date();
+    var fn = "schooldeploy_log_" + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + "_" + pad(now.getHours()) + pad(now.getMinutes()) + ".txt";
+    var href = location.href.replace("file:///","").replace(/\//g,"\\");
+    if (href.charAt(0)==="\\" && href.charAt(1)!=="\\") href="\\"+href;
+    var dir = href.substring(0, href.lastIndexOf("\\")+1);
+    var logPath = dir + "logs\\" + fn;
+    if (!fso.FolderExists(dir + "logs")) fso.CreateFolder(dir + "logs");
+    var f = fso.CreateTextFile(logPath, true, true);
+    f.Write("SchoolDeploy - Log esportato il " + now.toLocaleString() + "\r\n");
+    f.Write("============================================================\r\n");
+    for (var i=0; i<logLines.length; i++) f.Write(logLines[i] + "\r\n");
+    f.Close();
+    alert("Log esportato in:\n" + logPath);
+  } catch(e) { alert("Errore esportazione: " + e.message); }
+}
+// ---- SMART SETUP ASSISTANT (v1.4) ----
+function toggleSetupAssistant() {
+  var b = document.getElementById("setupAssistant");
+  var isHidden = b.style.display === "" || b.style.display === "none";
+  b.style.display = isHidden ? "block" : "none";
+  if (isHidden) autoDetectArgs();
+}
+
+function autoDetectArgs() {
+  var p = document.getElementById("swPath").value.trim().toLowerCase();
+  var m = document.getElementById("detectMsg");
+  if (!p) { m.innerText = "❌ Inserisci un percorso o un URL per analizzare il software."; return; }
+  
+  var isUrl = (p.indexOf("http://") === 0 || p.indexOf("https://") === 0);
+  var isPsCmd = (p.indexOf("start-process") >= 0 || p.indexOf("invoke-") >= 0 || p.indexOf("get-") >= 0);
+  
+  if (isUrl) {
+    m.innerHTML = "🌐 Rilevato <b>URL Download</b>. Il file verrà scaricato in %TEMP% durante l'installazione.";
+  } else if (isPsCmd) {
+    m.innerHTML = "⚡ Rilevato <b>Comando PowerShell</b>. Verrà eseguito direttamente tramite powershell.exe.";
+  }
+
+  if (p.indexOf(".msi") > 0 || p.indexOf(".msp") > 0) {
+    m.innerHTML = (isUrl ? m.innerHTML + "<br>" : "") + "💡 Rilevato pacchetto <b>MSI/MSP</b>.<br>Suggerito: <code class='badge b-green'>/quiet /norestart</code>";
+    return;
+  }
+  
+  if (p.indexOf("setup") > 0 || p.indexOf("install") > 0 || p.indexOf("firefox") > 0 || p.indexOf("chrome") > 0) {
+     m.innerHTML = (isUrl ? m.innerHTML + "<br>" : "") + "🔍 Possibile installer <b>Standard</b>.<br>Prova i preset qui sotto (es. <code class='badge b-green'>/VERYSILENT</code> o <code class='badge b-green'>/S</code>).";
+     return;
+  }
+
+  if (!isUrl) m.innerText = "❓ Motore non riconosciuto automaticamente. Usa i preset o prova '/?'.";
+}
+
+function setArgs(v) {
+  document.getElementById("swArgs").value = v;
+}
+
+function testHelp() {
+  var p = document.getElementById("swPath").value.trim();
+  if (!p) { alert("Inserisci prima il percorso del software."); return; }
+  
+  try {
+    addLog("i", "Tentativo apertura Help per: " + p);
+    // Lancio con /? in finestra CMD per catturare eventuali output testuali
+    var cmd = "cmd.exe /c \"\"" + p + "\" /? & pause\"";
+    wsh.Run(cmd, 1, false);
+    alert("Ho provato a lanciare il software con il parametro di aiuto (/?).\n\nSe il programma supporta l'aiuto via console, vedrai una finestra nera.\nSe lo supporta via interfaccia grafica, vedrai un popup del programma stesso.");
+  } catch(e) {
+    alert("Errore nel lancio dell'aiuto: " + e.message);
+  }
+}
+
+// ---- UTILITY ----
+function renderAll() { renderProfiles(); renderSWTable(); renderProfTable(); }
+function uid() { return "id_" + Date.now() + "_" + Math.floor(Math.random()*9999); }
+function byId(arr, id) { for(var i=0;i<arr.length;i++) if(arr[i].id===id) return arr[i]; return null; }
+function indexOf(arr, v) { for(var i=0;i<arr.length;i++) if(arr[i]===v) return i; return -1; }
+function filter(arr, fn) { var r=[]; for(var i=0;i<arr.length;i++) if(fn(arr[i])) r.push(arr[i]); return r; }
+function esc(s) { if(!s) return ""; return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function pad(n) { return n<10?"0"+n:String(n); }
+function val(id) { return document.getElementById(id).value.trim(); }
+function set(id,v) { document.getElementById(id).value = v; }
+
+window.onload = init;
+</script>
+</body>
+</html>
